@@ -17,8 +17,8 @@ html, body {
   height: 100%;
   margin: 0;
   padding: 0;
-  background-color: #FAF8F5;
-  color: #222B24;
+  background-color: #F9F6F0;
+  color: #2D251E;
   font-family: 'Outfit', 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -26,8 +26,8 @@ html, body {
 }
 
 html.dark body {
-  background-color: #131814;
-  color: #EDF3EC;
+  background-color: #1C1916;
+  color: #F7F3ED;
 }
 
 #root {
@@ -48,20 +48,20 @@ html.dark body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #D8DFD6;
+  background: #E6D7C3;
   border-radius: 9999px;
 }
 
 html.dark ::-webkit-scrollbar-thumb {
-  background: #2E3A31;
+  background: #3D352D;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #B6C3B3;
+  background: #D5C0A4;
 }
 
 html.dark ::-webkit-scrollbar-thumb:hover {
-  background: #445448;
+  background: #52402B;
 }
 
 /* Smooth Tab Crossfade Transitions */
@@ -130,11 +130,11 @@ html.dark ::-webkit-scrollbar-thumb:hover {
 @keyframes mindfulBreath {
   0%, 100% {
     transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(107, 128, 101, 0.2);
+    box-shadow: 0 0 0 0 rgba(123, 98, 68, 0.2);
   }
   50% {
     transform: scale(1.025);
-    box-shadow: 0 0 0 8px rgba(107, 128, 101, 0);
+    box-shadow: 0 0 0 8px rgba(123, 98, 68, 0);
   }
 }
 

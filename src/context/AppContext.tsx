@@ -276,12 +276,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         document.documentElement.classList.add('dark');
         document.documentElement.style.colorScheme = 'dark';
         const metaThemeColor = document.getElementById('theme-color-meta');
-        if (metaThemeColor) metaThemeColor.setAttribute('content', '#131814');
+        if (metaThemeColor) metaThemeColor.setAttribute('content', '#1C1916');
       } else {
         document.documentElement.classList.remove('dark');
         document.documentElement.style.colorScheme = 'light';
         const metaThemeColor = document.getElementById('theme-color-meta');
-        if (metaThemeColor) metaThemeColor.setAttribute('content', '#FAF8F5');
+        if (metaThemeColor) metaThemeColor.setAttribute('content', '#F9F6F0');
       }
     };
 

@@ -103,19 +103,19 @@ export const AppDrawer: React.FC = () => {
       <div
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
-        className={`relative w-full max-w-xs bg-[#FAF8F5] dark:bg-[#131814] text-stone-900 dark:text-[#EDF3EC] h-full shadow-[8px_0_36px_rgba(0,0,0,0.18)] dark:shadow-[8px_0_40px_rgba(0,0,0,0.65)] flex flex-col z-10 border-r border-stone-200/80 dark:border-stone-800/80 ${
+        className={`relative w-full max-w-xs bg-[#F9F6F0] dark:bg-[#1C1916] text-[#2D251E] dark:text-[#F7F3ED] h-full shadow-[8px_0_36px_rgba(0,0,0,0.18)] dark:shadow-[8px_0_40px_rgba(0,0,0,0.65)] flex flex-col z-10 border-r border-[#EAE1D4] dark:border-[#383129] ${
           isAnimatingOut ? 'animate-drawer-panel-out' : 'animate-drawer-panel-in'
         }`}
       >
         {/* Drawer Header */}
-        <div className="p-5 border-b border-stone-200/80 dark:border-stone-800/80 bg-white/80 dark:bg-[#1C231E]/80 backdrop-blur-md">
+        <div className="p-5 border-b border-[#EAE1D4] dark:border-[#383129] bg-white/80 dark:bg-[#26211C]/80 backdrop-blur-md">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-full bg-emerald-800 text-white flex items-center justify-center font-serif font-bold text-sm shadow-ambient-sm">
                 RC
               </div>
               <div>
-                <span className="font-serif font-bold text-base tracking-tight leading-none block text-stone-900 dark:text-[#EDF3EC]">
+                <span className="font-serif font-bold text-base tracking-tight leading-none block text-[#2D251E] dark:text-[#F7F3ED]">
                   RC Pilates
                 </span>
                 <span className="text-[11px] text-stone-500 dark:text-stone-400 font-medium">
@@ -133,12 +133,12 @@ export const AppDrawer: React.FC = () => {
             </button>
           </div>
 
-          <div className="flex items-center gap-2 p-2 rounded-2xl bg-stone-100/80 dark:bg-[#242D26]/80 border border-stone-200/80 dark:border-stone-700/80">
+          <div className="flex items-center gap-2 p-2 rounded-2xl bg-[#F2E9DC]/80 dark:bg-[#302A24]/80 border border-[#E6D7C3] dark:border-[#3D352D]">
             <div className="w-7 h-7 rounded-full bg-emerald-800 text-emerald-100 flex items-center justify-center font-serif font-bold text-xs">
               {currentUser.role === 'instructor' ? 'RC' : currentUser.displayName.slice(0, 2).toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-bold truncate text-stone-900 dark:text-[#EDF3EC]">{currentUser.displayName}</p>
+              <p className="text-xs font-bold truncate text-[#2D251E] dark:text-[#F7F3ED]">{currentUser.displayName}</p>
               <p className="text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold flex items-center gap-1">
                 {isInstructor && <Shield className="w-3 h-3" />}
                 <span className="capitalize">{currentUser.role}</span>

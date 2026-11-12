@@ -8,36 +8,45 @@ export default {
   theme: {
     extend: {
       colors: {
+        // Luxury Oat Milk & Warm Sand aesthetic brand scale
+        emerald: {
+          50: '#F9F5EE',   // pale oat milk linen
+          100: '#F2E9DC',  // soft oat cream
+          200: '#E6D7C3',  // warm sand
+          300: '#D5C0A4',  // soft almond
+          400: '#BFA483',  // toasted almond
+          500: '#A68B69',  // warm sand camel
+          600: '#917654',  // rich toasted oat
+          700: '#7B6244',  // warm almond bronze
+          800: '#675137',  // signature toasted almond brand
+          900: '#52402B',  // deep roasted almond
+          950: '#33271A',  // warm dark espresso wood
+        },
         pilates: {
-          bg: '#FAF8F5',
+          bg: '#F9F6F0',
           surface: '#FFFFFF',
-          card: '#F6F3EE',
-          border: '#E8E2D8',
-          subtle: '#E2DBD0',
-          text: '#222A23',
-          muted: '#637064',
-          darkBg: '#131814',
-          darkSurface: '#1C231E',
-          darkCard: '#242D26',
-          darkBorder: '#2E3A31',
-          darkText: '#EDF3EC',
-          darkMuted: '#94A396',
-          sage: {
-            DEFAULT: '#6B8065',
-            light: '#8F9E8B',
-            soft: '#EAF0E9',
-            dark: '#4B5E46',
-          },
-          clay: {
-            DEFAULT: '#C08670',
-            light: '#DCA996',
-            soft: '#FAF1ED',
-          },
+          card: '#F6F1EA',
+          border: '#EAE1D4',
+          subtle: '#DFC8AF',
+          text: '#2D251E',
+          muted: '#786B5D',
+          darkBg: '#1C1916',
+          darkSurface: '#26211C',
+          darkCard: '#302A24',
+          darkBorder: '#3D352D',
+          darkText: '#F7F3ED',
+          darkMuted: '#A89B8C',
           sand: {
-            DEFAULT: '#E5DDCF',
-            light: '#F3EFE7',
-            soft: '#FAF7F2',
+            DEFAULT: '#E6D7C3',
+            light: '#F2E9DC',
+            soft: '#F9F5EE',
           },
+          almond: {
+            DEFAULT: '#7B6244',
+            light: '#A68B69',
+            dark: '#52402B',
+          },
+          oat: '#F6F1EA',
           cream: '#FFFDF9',
         }
       },
@@ -46,9 +55,9 @@ export default {
         serif: ['Cormorant Garamond', 'serif'],
       },
       boxShadow: {
-        'ambient': '0 8px 30px -4px rgba(90, 105, 85, 0.07), 0 2px 8px -2px rgba(0, 0, 0, 0.04)',
-        'ambient-lg': '0 16px 40px -8px rgba(90, 105, 85, 0.12), 0 4px 12px -2px rgba(0, 0, 0, 0.05)',
-        'ambient-sm': '0 4px 15px -2px rgba(90, 105, 85, 0.05)',
+        'ambient': '0 8px 30px -4px rgba(115, 95, 75, 0.08), 0 2px 8px -2px rgba(0, 0, 0, 0.04)',
+        'ambient-lg': '0 16px 40px -8px rgba(115, 95, 75, 0.12), 0 4px 12px -2px rgba(0, 0, 0, 0.05)',
+        'ambient-sm': '0 4px 15px -2px rgba(115, 95, 75, 0.06)',
       }
     },
   },

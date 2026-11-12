@@ -10,7 +10,7 @@ export const Header: React.FC = () => {
 
   return (
     <header
-      className="sticky top-0 z-40 bg-[#FAF8F5]/95 dark:bg-[#131814]/95 backdrop-blur-md px-4 pb-3 border-b border-stone-200/80 dark:border-stone-800 transition-colors shadow-xs"
+      className="sticky top-0 z-40 bg-[#F9F6F0]/95 dark:bg-[#1C1916]/95 backdrop-blur-md px-4 pb-3 border-b border-[#EAE1D4] dark:border-[#383129] transition-colors shadow-xs"
       style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top, 0px))' }}
     >
       <div className="flex items-center justify-between max-w-2xl mx-auto">
@@ -20,7 +20,7 @@ export const Header: React.FC = () => {
           <button
             type="button"
             onClick={toggleDrawer}
-            className="p-2 -ml-1 rounded-2xl bg-white dark:bg-[#1C231E] hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-800 dark:text-stone-100 border border-stone-200 dark:border-stone-800 shadow-xs flex items-center justify-center transition-all duration-200 active:scale-90"
+            className="p-2 -ml-1 rounded-2xl bg-white dark:bg-[#26211C] hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-800 dark:text-stone-100 border border-stone-200 dark:border-stone-800 shadow-xs flex items-center justify-center transition-all duration-200 active:scale-90"
             aria-label="Open Studio Navigation Menu"
             title="Menu"
           >
@@ -54,7 +54,7 @@ export const Header: React.FC = () => {
         <div className="relative">
           <button
             onClick={() => setShowSwitchMenu(!showSwitchMenu)}
-            className="flex items-center gap-2 p-1.5 pl-3 rounded-full bg-white/90 dark:bg-[#1C231E]/90 hover:bg-white dark:hover:bg-[#1C231E] border border-stone-200 dark:border-stone-800 shadow-sm transition-all"
+            className="flex items-center gap-2 p-1.5 pl-3 rounded-full bg-white/90 dark:bg-[#26211C]/90 hover:bg-white dark:hover:bg-[#26211C] border border-[#EAE1D4] dark:border-[#383129] shadow-sm transition-all"
           >
             <div className="text-right hidden xs:block">
               <p className="text-xs font-bold text-stone-800 dark:text-stone-200 leading-tight">
@@ -81,7 +81,7 @@ export const Header: React.FC = () => {
 
           {/* Quick Dropdown Menu */}
           {showSwitchMenu && (
-            <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-[#1C231E] rounded-2xl shadow-xl border border-stone-200 dark:border-stone-800 py-2 z-50 animate-in fade-in zoom-in-95 text-stone-800 dark:text-stone-200">
+            <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-[#26211C] rounded-2xl shadow-xl border border-[#EAE1D4] dark:border-[#383129] py-2 z-50 animate-in fade-in zoom-in-95 text-stone-800 dark:text-stone-200">
               <div className="px-3 py-2 border-b border-stone-100 dark:border-stone-800">
                 <p className="text-[11px] text-stone-400 dark:text-stone-500 font-medium">Logged in as</p>
                 <p className="text-xs font-bold text-stone-800 dark:text-stone-100">{currentUser.displayName}</p>

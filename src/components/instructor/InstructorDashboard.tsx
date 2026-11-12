@@ -383,17 +383,17 @@ export const InstructorDashboard: React.FC<InstructorDashboardProps> = ({ onOpen
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Back to Overview</span>
             </button>
-            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/80 text-emerald-900 dark:text-emerald-200 border border-emerald-200 dark:border-emerald-800/60 flex items-center gap-1">
-              <Moon className="w-3.5 h-3.5 text-emerald-500" />
+            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[#F4ECE1] dark:bg-[#33271A] text-[#7B6244] dark:text-[#D5C0A4] border border-[#E6D7C3] dark:border-[#52402B] flex items-center gap-1">
+              <Moon className="w-3.5 h-3.5 text-[#A68B69]" />
               <span>4:00 PM – 12:00 AM</span>
             </span>
           </div>
 
-          {/* Dedicated Evening Header Banner (Calmer Twilight Sage) */}
-          <div className="rounded-3xl p-5 bg-gradient-to-br from-[#16241A] via-[#101B13] to-[#0B130E] dark:from-[#132017] dark:via-[#0E1710] dark:to-[#0A100B] text-[#EDF4ED] shadow-ambient relative overflow-hidden border border-[#2B4531]/30">
+          {/* Dedicated Evening Header Banner (Warm Twilight Sand & Oat) */}
+          <div className="rounded-3xl p-5 bg-gradient-to-br from-[#29221B] via-[#201A14] to-[#17120E] dark:from-[#211A14] dark:via-[#19140F] dark:to-[#110D0A] text-[#F7F3ED] shadow-ambient relative overflow-hidden border border-[#52402B]/40">
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs text-emerald-300 font-semibold flex items-center gap-1.5">
-                <Moon className="w-4 h-4 text-emerald-400" />
+              <span className="text-xs text-[#E6D7C3] font-semibold flex items-center gap-1.5">
+                <Moon className="w-4 h-4 text-[#D5C0A4]" />
                 <span>Evening Batches</span>
               </span>
               <span className="text-xs bg-white/10 px-2.5 py-0.5 rounded-full text-stone-200 font-semibold">
@@ -410,8 +410,8 @@ export const InstructorDashboard: React.FC<InstructorDashboardProps> = ({ onOpen
             {/* Quick Evening Metrics */}
             <div className="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-white/10 text-center">
               <div className="bg-white/5 backdrop-blur-md rounded-2xl p-2 border border-white/5">
-                <p className="text-lg font-serif font-bold text-emerald-300">{eveningPresentCount}</p>
-                <p className="text-xs text-emerald-200/90 font-medium">Present</p>
+                <p className="text-lg font-serif font-bold text-[#D5C0A4]">{eveningPresentCount}</p>
+                <p className="text-xs text-[#E6D7C3]/90 font-medium">Present</p>
               </div>
               <div className="bg-white/5 backdrop-blur-md rounded-2xl p-2 border border-white/5">
                 <p className="text-lg font-serif font-bold text-amber-300">{eveningScheduledCount}</p>
@@ -423,7 +423,7 @@ export const InstructorDashboard: React.FC<InstructorDashboardProps> = ({ onOpen
               </div>
             </div>
 
-            <PeacefulMoonDrawing className="w-28 h-16 text-emerald-200/15 absolute -right-2 -bottom-2 pointer-events-none" />
+            <PeacefulMoonDrawing className="w-28 h-16 text-[#E6D7C3]/15 absolute -right-2 -bottom-2 pointer-events-none" />
           </div>
 
           {/* Evening Slots List */}
@@ -697,27 +697,27 @@ export const InstructorDashboard: React.FC<InstructorDashboardProps> = ({ onOpen
             <button
               type="button"
               onClick={() => setInstructorActiveView('evening')}
-              className="p-5 rounded-3xl border border-emerald-200/80 dark:border-emerald-900/40 bg-gradient-to-br from-[#F6FBF7] via-white to-[#EDF6EF] dark:from-[#142117] dark:via-[#101A12] dark:to-[#0D150F] hover:border-emerald-300 dark:hover:border-emerald-800/80 transition-all text-left relative overflow-hidden flex flex-col justify-between shadow-ambient active:scale-[0.98] duration-200 group"
+              className="p-5 rounded-3xl border border-[#D5C0A4] dark:border-[#52402B]/60 bg-gradient-to-br from-[#FBF8F4] via-white to-[#F2E8DC] dark:from-[#241E18] dark:via-[#1C1713] dark:to-[#14100D] hover:border-[#BFA483] dark:hover:border-[#7B6244]/80 transition-all text-left relative overflow-hidden flex flex-col justify-between shadow-ambient active:scale-[0.98] duration-200 group"
             >
               <div className="flex items-start justify-between w-full">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-100/80 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-300 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform duration-200">
+                <div className="w-12 h-12 rounded-2xl bg-[#EFE3D2] dark:bg-[#382B1D] text-[#7B6244] dark:text-[#D5C0A4] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform duration-200">
                   <Moon className="w-6 h-6" />
                 </div>
-                <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-100/90 dark:bg-emerald-950 text-emerald-900 dark:text-emerald-200 border border-emerald-200 dark:border-emerald-800">
+                <span className="text-xs font-bold px-3 py-1 rounded-full bg-[#EFE3D2] dark:bg-[#382B1D] text-[#675137] dark:text-[#E6D7C3] border border-[#D5C0A4] dark:border-[#52402B]">
                   {eveningBookedCount} Classes
                 </span>
               </div>
 
               <div className="w-full my-4 h-16 flex items-center justify-center">
-                <PeacefulMoonDrawing className="w-28 h-16 text-emerald-800/80 dark:text-emerald-300/80 group-hover:scale-105 transition-transform duration-200" />
+                <PeacefulMoonDrawing className="w-28 h-16 text-[#7B6244]/80 dark:text-[#D5C0A4]/80 group-hover:scale-105 transition-transform duration-200" />
               </div>
 
-              <div className="w-full pt-1 border-t border-emerald-200/50 dark:border-emerald-900/30">
+              <div className="w-full pt-1 border-t border-[#D5C0A4]/40 dark:border-[#52402B]/30">
                 <div className="flex items-center justify-between">
                   <h3 className="font-serif font-bold text-xl text-stone-900 dark:text-stone-100 leading-tight">
                     Evening Batches
                   </h3>
-                  <span className="text-xs text-emerald-800 dark:text-emerald-400 font-bold group-hover:translate-x-0.5 transition-transform duration-200">
+                  <span className="text-xs text-[#7B6244] dark:text-[#D5C0A4] font-bold group-hover:translate-x-0.5 transition-transform duration-200">
                     Open &rarr;
                   </span>
                 </div>
