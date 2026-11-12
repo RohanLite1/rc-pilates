@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import {
   Apple,
@@ -20,7 +20,6 @@ import {
   CheckCircle2,
   ListFilter,
   FileText,
-  FileUp,
   Download,
   BookOpen
 } from 'lucide-react';
@@ -36,13 +35,11 @@ import {
 } from '../common/StudioDrawings';
 
 export const ClientDietView: React.FC = () => {
-  const { currentUser, addWaterLog, importDietPlanPdf } = useApp();
+  const { currentUser, addWaterLog } = useApp();
   const [activePanel, setActivePanel] = useState<'meals' | 'targets' | 'habits' | 'rules' | 'pdf'>('meals');
   const [selectedDayNum, setSelectedDayNum] = useState<number>(1);
   const [selectedMealIndex, setSelectedMealIndex] = useState<number>(0);
   const [viewMode, setViewMode] = useState<'single' | 'all'>('single');
-  const [uploadSuccessMsg, setUploadSuccessMsg] = useState<string>('');
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   if (!currentUser) return null;
 
@@ -64,54 +61,14 @@ export const ClientDietView: React.FC = () => {
     return Flame;
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const sizeInKb = Math.round(file.size / 1024);
-    const sizeStr = sizeInKb > 1000 ? `${(sizeInKb / 1024).toFixed(1)} MB` : `${sizeInKb} KB`;
-    const nowStr = new Date().toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
-
-    importDietPlanPdf(currentUser.id, {
-      fileName: file.name,
-      fileSize: sizeStr,
-      uploadedAt: nowStr,
-      notes: 'Custom nutritionist prescribed nutrition protocol'
-    });
-
-    setUploadSuccessMsg(`Imported "${file.name}" successfully!`);
-    setTimeout(() => setUploadSuccessMsg(''), 4000);
-  };
-
-  const handleLoadOfficialSample = () => {
-    const nowStr = new Date().toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
-
-    importDietPlanPdf(currentUser.id, {
-      fileName: 'RC_Pilates_Official_Studio_Nutrition_Plan.pdf',
-      fileSize: '342 KB',
-      uploadedAt: nowStr,
-      notes: 'Lead Instructor Radhika Chopra approved studio protocol'
-    });
-
-    setUploadSuccessMsg('Imported official studio PDF plan successfully!');
-    setTimeout(() => setUploadSuccessMsg(''), 4000);
-  };
-
-  const handleDownloadSamplePdf = () => {
-    const content = `RC PILATES & FITNESS STUDIO - NUTRITION BLUEPRINT\n\nClient: ${currentUser.displayName}\nDate: ${new Date().toLocaleDateString()}\nLead Instructor: Radhika Chopra\n\n1. Calorie Floor: 1,600 kcal strict daily baseline\n2. Protein: ~90g lean protein\n3. Cooking Oil: Max 3-4 tsp per day\n4. Hydration: 2.5 - 3 Liters minimum\n5. Timing: Eat light complex carbs 90 mins prior to Reformer session.`;
+  const handleDownloadPdf = () => {
+    if (!currentUser.importedDietPdf) return;
+    const content = `RC PILATES & FITNESS STUDIO - TAILORED NUTRITION BLUEPRINT\n\nMember: ${currentUser.displayName}\nAssigned Date: ${currentUser.importedDietPdf.uploadedAt}\nLead Instructor: Radhika Chopra\n\n1. Calorie Floor: 1,600 kcal strict daily baseline\n2. Protein: ~90g lean protein\n3. Cooking Oil: Max 3-4 tsp per day\n4. Hydration: 2.5 - 3 Liters minimum\n5. Timing: Eat light complex carbs 90 mins prior to Reformer session.\n\nInstructor Notes: ${currentUser.importedDietPdf.notes || 'Prescribed by Lead Instructor Radhika Chopra'}`;
     const blob = new Blob([content], { type: 'application/pdf' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = currentUser.importedDietPdf?.fileName || 'RC_Pilates_Nutrition_Plan.pdf';
+    a.download = currentUser.importedDietPdf.fileName;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -126,14 +83,16 @@ export const ClientDietView: React.FC = () => {
             <span>RC Pilates Nutrition</span>
           </span>
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setActivePanel('pdf')}
-              className="text-xs bg-[#FAF6F0] hover:bg-white text-[#675137] px-3 py-1 rounded-full font-bold flex items-center gap-1.5 border border-[#D5C0A4] shadow-xs transition-all active:scale-95"
-            >
-              <FileUp className="w-3.5 h-3.5 text-[#7B6244]" />
-              <span>{currentUser.importedDietPdf ? 'PDF Loaded' : 'Import PDF'}</span>
-            </button>
+            {currentUser.importedDietPdf && (
+              <button
+                type="button"
+                onClick={() => setActivePanel('pdf')}
+                className="text-xs bg-[#FAF6F0] hover:bg-white text-[#675137] px-3 py-1 rounded-full font-bold flex items-center gap-1.5 border border-[#D5C0A4] shadow-xs transition-all active:scale-95"
+              >
+                <FileText className="w-3.5 h-3.5 text-[#7B6244]" />
+                <span>View Studio PDF</span>
+              </button>
+            )}
             <span className="text-xs bg-[#FAF6F0] px-2.5 py-1 rounded-full text-[#675137] font-bold border border-[#D5C0A4]/80 shadow-xs">
               ~{diet.metrics.dailyIntake}
             </span>
@@ -151,15 +110,8 @@ export const ClientDietView: React.FC = () => {
         <BotanicalBranchDrawing className="w-24 h-20 text-[#7B6244]/15 absolute -right-1 -bottom-1 pointer-events-none" />
       </div>
 
-      {uploadSuccessMsg && (
-        <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-300 text-emerald-900 text-xs font-semibold flex items-center gap-2 animate-in fade-in">
-          <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
-          <span>{uploadSuccessMsg}</span>
-        </div>
-      )}
-
       {/* Visual Navigation Panels (Only 1 active at a time to prevent clutter) */}
-      <div className="grid grid-cols-5 gap-1 bg-[#F2E9DC] p-1.5 rounded-2xl border border-stone-200/80">
+      <div className={`grid ${currentUser.importedDietPdf ? 'grid-cols-5' : 'grid-cols-4'} gap-1 bg-[#F2E9DC] p-1.5 rounded-2xl border border-stone-200/80`}>
         <button
           type="button"
           onClick={() => setActivePanel('meals')}
@@ -212,21 +164,21 @@ export const ClientDietView: React.FC = () => {
           <span>Rules</span>
         </button>
 
-        <button
-          type="button"
-          onClick={() => setActivePanel('pdf')}
-          className={`py-2 px-1 rounded-xl text-[11px] font-bold transition-all flex flex-col items-center justify-center gap-1 relative ${
-            activePanel === 'pdf'
-              ? 'bg-emerald-800 text-white shadow-sm'
-              : 'text-stone-700 hover:text-stone-900'
-          }`}
-        >
-          <FileText className="w-3.5 h-3.5" />
-          <span>PDF Plan</span>
-          {currentUser.importedDietPdf && (
+        {currentUser.importedDietPdf && (
+          <button
+            type="button"
+            onClick={() => setActivePanel('pdf')}
+            className={`py-2 px-1 rounded-xl text-[11px] font-bold transition-all flex flex-col items-center justify-center gap-1 relative ${
+              activePanel === 'pdf'
+                ? 'bg-emerald-800 text-white shadow-sm'
+                : 'text-stone-700 hover:text-stone-900'
+            }`}
+          >
+            <FileText className="w-3.5 h-3.5" />
+            <span>PDF Protocol</span>
             <span className="w-2 h-2 rounded-full bg-amber-500 absolute top-1 right-2" />
-          )}
-        </button>
+          </button>
+        )}
       </div>
 
       {/* PANEL 1: 7-DAY MEALS (Ultra-clean, Minimal on Screen, Visual Stepper) */}
@@ -671,155 +623,98 @@ export const ClientDietView: React.FC = () => {
         </div>
       )}
 
-      {/* PANEL 5: IMPORT DIET PLAN FROM PDF */}
-      {activePanel === 'pdf' && (
+      {/* PANEL 5: ASSIGNED STUDIO PDF PROTOCOL (Read & Download Only for Clients) */}
+      {activePanel === 'pdf' && currentUser.importedDietPdf && (
         <div className="space-y-4 animate-in fade-in duration-200">
-          {/* Hidden File Input */}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".pdf,application/pdf"
-            onChange={handleFileUpload}
-            className="hidden"
-          />
-
-          {/* If a PDF is already imported */}
-          {currentUser.importedDietPdf ? (
-            <div className="bg-white rounded-3xl p-5 shadow-ambient border border-stone-200/90 space-y-4">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-[#F2E9DC] text-emerald-900 flex items-center justify-center shrink-0">
-                    <FileText className="w-6 h-6 text-emerald-800" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <h4 className="font-serif font-bold text-base text-stone-900">
-                        {currentUser.importedDietPdf.fileName}
-                      </h4>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
-                        Active PDF
-                      </span>
-                    </div>
-                    <p className="text-xs text-stone-500 mt-0.5">
-                      Size: {currentUser.importedDietPdf.fileSize} • Uploaded: {currentUser.importedDietPdf.uploadedAt}
-                    </p>
-                  </div>
+          <div className="bg-white rounded-3xl p-5 shadow-ambient border border-[#D5C0A4] space-y-4">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-[#F2E9DC] text-[#675137] flex items-center justify-center shrink-0 border border-[#D5C0A4]">
+                  <FileText className="w-6 h-6 text-[#675137]" />
                 </div>
-              </div>
-
-              {currentUser.importedDietPdf.notes && (
-                <p className="text-xs text-stone-600 bg-[#FAF8F5] p-3 rounded-xl border border-stone-200/70 italic">
-                  Note: "{currentUser.importedDietPdf.notes}"
-                </p>
-              )}
-
-              {/* Action Buttons */}
-              <div className="grid grid-cols-2 gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={handleDownloadSamplePdf}
-                  className="py-2.5 px-3 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
-                >
-                  <Download className="w-3.5 h-3.5 text-stone-600" />
-                  <span>Download PDF</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="py-2.5 px-3 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-xs"
-                >
-                  <FileUp className="w-3.5 h-3.5" />
-                  <span>Replace PDF</span>
-                </button>
-              </div>
-
-              {/* Simulated PDF Document Reader Preview */}
-              <div className="rounded-2xl border border-stone-300 bg-[#FAF8F5] p-4 text-stone-800 space-y-3 shadow-inner">
-                <div className="flex items-center justify-between border-b border-stone-200 pb-2">
-                  <div className="flex items-center gap-2">
-                    <BookOpen className="w-4 h-4 text-emerald-800" />
-                    <span className="font-serif font-bold text-xs uppercase tracking-wider text-stone-700">
-                      Document Overview
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <h4 className="font-serif font-bold text-base text-[#2D251E]">
+                      {currentUser.importedDietPdf.fileName}
+                    </h4>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                      Prescribed by Studio
                     </span>
                   </div>
-                  <span className="text-[10px] text-stone-500 font-semibold">Page 1 of 1</span>
-                </div>
-
-                <div className="space-y-2 text-xs leading-relaxed text-stone-700">
-                  <div className="p-3 bg-white rounded-xl border border-stone-200/70 space-y-1">
-                    <p className="font-serif font-bold text-sm text-stone-900">
-                      RC Pilates Nutrition Plan — {currentUser.displayName}
-                    </p>
-                    <p className="text-[11px] text-stone-500">
-                      Prescribed by Radhika Chopra • Studio Lead &amp; Reformer Specialist
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-1.5 text-center">
-                    <div className="p-2 bg-white rounded-xl border border-stone-200/60">
-                      <p className="text-[10px] text-stone-500 font-bold uppercase">Calorie Target</p>
-                      <p className="text-sm font-bold text-emerald-900">1,600 kcal</p>
-                    </div>
-                    <div className="p-2 bg-white rounded-xl border border-stone-200/60">
-                      <p className="text-[10px] text-stone-500 font-bold uppercase">Daily Water</p>
-                      <p className="text-sm font-bold text-emerald-900">2.5–3.0 L</p>
-                    </div>
-                    <div className="p-2 bg-white rounded-xl border border-stone-200/60">
-                      <p className="text-[10px] text-stone-500 font-bold uppercase">Reformer Meal</p>
-                      <p className="text-sm font-bold text-emerald-900">-90 Mins</p>
-                    </div>
-                  </div>
-
-                  <div className="p-2.5 bg-emerald-50 rounded-xl border border-emerald-200 text-emerald-900 text-[11px] flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
-                    <span>Synchronized with your studio reformer profile &amp; morning batches.</span>
-                  </div>
+                  <p className="text-xs text-stone-500 mt-0.5">
+                    Size: {currentUser.importedDietPdf.fileSize} • Uploaded: {currentUser.importedDietPdf.uploadedAt}
+                  </p>
                 </div>
               </div>
             </div>
-          ) : (
-            /* Upload Dropzone / Quick Load Area */
-            <div className="space-y-3">
-              <div
-                onClick={() => fileInputRef.current?.click()}
-                className="w-full bg-white rounded-3xl p-8 border-2 border-dashed border-[#D5C0A4] hover:border-emerald-700 hover:bg-[#FAF8F5] cursor-pointer transition-all flex flex-col items-center justify-center text-center space-y-3 shadow-ambient group"
+
+            {currentUser.importedDietPdf.notes && (
+              <div className="bg-[#FAF8F5] p-3.5 rounded-xl border border-[#D5C0A4]/80 space-y-1">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-[#675137]">
+                  Instructor Radhika's Guidance:
+                </p>
+                <p className="text-xs text-[#2D251E] italic">
+                  "{currentUser.importedDietPdf.notes}"
+                </p>
+              </div>
+            )}
+
+            {/* Action Buttons: Download Prescribed PDF */}
+            <div className="pt-1">
+              <button
+                type="button"
+                onClick={handleDownloadPdf}
+                className="w-full py-3 px-4 rounded-xl bg-[#675137] hover:bg-[#53402B] text-white text-xs font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-xs"
               >
-                <div className="w-14 h-14 rounded-2xl bg-[#F2E9DC] group-hover:bg-emerald-100 text-emerald-900 flex items-center justify-center transition-colors">
-                  <FileUp className="w-7 h-7 text-emerald-800" />
+                <Download className="w-4 h-4 text-white" />
+                <span>Download Prescribed PDF Plan</span>
+              </button>
+            </div>
+
+            {/* Simulated PDF Document Reader Preview */}
+            <div className="rounded-2xl border border-[#D5C0A4] bg-[#FAF8F5] p-4 text-[#2D251E] space-y-3 shadow-inner">
+              <div className="flex items-center justify-between border-b border-[#D5C0A4]/60 pb-2">
+                <div className="flex items-center gap-2">
+                  <BookOpen className="w-4 h-4 text-[#675137]" />
+                  <span className="font-serif font-bold text-xs uppercase tracking-wider text-[#675137]">
+                    Document Overview
+                  </span>
                 </div>
-                <div className="space-y-1">
-                  <h4 className="font-serif font-bold text-base text-stone-900">
-                    Import Diet Plan (PDF)
-                  </h4>
-                  <p className="text-xs text-stone-500 max-w-xs mx-auto">
-                    Click to select a nutrition PDF from your nutritionist, doctor, or personal records.
-                  </p>
-                </div>
-                <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
-                  Accepts .pdf up to 10MB
-                </span>
+                <span className="text-[10px] text-stone-500 font-semibold">Page 1 of 1</span>
               </div>
 
-              {/* Alternative: Load Official Studio Template */}
-              <div className="bg-white rounded-3xl p-4 shadow-ambient border border-stone-200 flex items-center justify-between">
-                <div>
-                  <h5 className="font-serif font-bold text-xs text-stone-900">
-                    Need the Studio Nutrition Blueprint?
-                  </h5>
+              <div className="space-y-2 text-xs leading-relaxed text-stone-700">
+                <div className="p-3 bg-white rounded-xl border border-[#D5C0A4]/60 space-y-1">
+                  <p className="font-serif font-bold text-sm text-[#2D251E]">
+                    RC Pilates Nutrition Plan — {currentUser.displayName}
+                  </p>
                   <p className="text-[11px] text-stone-500">
-                    Load Radhika's official 1,600 kcal reformer meal protocol.
+                    Prescribed by Radhika Chopra • Studio Lead &amp; Reformer Specialist
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleLoadOfficialSample}
-                  className="px-3.5 py-2 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-bold transition-all shadow-xs shrink-0"
-                >
-                  Load Studio PDF
-                </button>
+
+                <div className="grid grid-cols-3 gap-1.5 text-center">
+                  <div className="p-2 bg-white rounded-xl border border-[#D5C0A4]/60">
+                    <p className="text-[10px] text-stone-500 font-bold uppercase">Calorie Target</p>
+                    <p className="text-sm font-bold text-[#675137]">1,600 kcal</p>
+                  </div>
+                  <div className="p-2 bg-white rounded-xl border border-[#D5C0A4]/60">
+                    <p className="text-[10px] text-stone-500 font-bold uppercase">Daily Water</p>
+                    <p className="text-sm font-bold text-[#675137]">2.5–3.0 L</p>
+                  </div>
+                  <div className="p-2 bg-white rounded-xl border border-[#D5C0A4]/60">
+                    <p className="text-[10px] text-stone-500 font-bold uppercase">Reformer Meal</p>
+                    <p className="text-sm font-bold text-[#675137]">-90 Mins</p>
+                  </div>
+                </div>
+
+                <div className="p-2.5 bg-emerald-50 rounded-xl border border-emerald-200 text-emerald-900 text-[11px] flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
+                  <span>Synchronized with your studio reformer profile &amp; morning batches.</span>
+                </div>
               </div>
             </div>
-          )}
+          </div>
         </div>
       )}
     </div>

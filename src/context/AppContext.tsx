@@ -100,7 +100,7 @@ interface AppContextType {
   requestReschedule: (sessionId: string, newDate: string, newTime: string, reason?: string) => void;
   respondToReschedule: (sessionId: string, approve: boolean) => void;
   updateClientDietPlan: (clientId: string, diet: StudioDietPlan) => void;
-  importDietPlanPdf: (clientId: string, pdfData: { fileName: string; fileSize: string; uploadedAt: string; notes?: string; fileUrl?: string }) => void;
+  importDietPlanPdf: (clientId: string, pdfData?: { fileName: string; fileSize: string; uploadedAt: string; notes?: string; fileUrl?: string } | null) => void;
   addWaterLog: (clientId: string, amountLiters: number) => void;
   refreshState: () => void;
 }
@@ -765,24 +765,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Import Studio Diet Plan from PDF
   const importDietPlanPdf = (
     clientId: string,
-    pdfData: { fileName: string; fileSize: string; uploadedAt: string; notes?: string; fileUrl?: string }
+    pdfData?: { fileName: string; fileSize: string; uploadedAt: string; notes?: string; fileUrl?: string } | null
   ) => {
     setClients(prev =>
       prev.map(c => {
         if (c.id === clientId) {
           return {
             ...c,
-            importedDietPdf: pdfData
+            importedDietPdf: pdfData || undefined
           };
         }
         return c;
       })
     );
     if (currentUser && currentUser.id === clientId) {
-      setCurrentUser(prev => (prev ? { ...prev, importedDietPdf: pdfData } : null));
+      setCurrentUser(prev => (prev ? { ...prev, importedDietPdf: pdfData || undefined } : null));
     }
     if (selectedClient && selectedClient.id === clientId) {
-      setSelectedClient(prev => (prev ? { ...prev, importedDietPdf: pdfData } : null));
+      setSelectedClient(prev => (prev ? { ...prev, importedDietPdf: pdfData || undefined } : null));
     }
   };
 

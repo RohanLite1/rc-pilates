@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import type { UserProfile } from '../../types';
-import { Search, ChevronRight, Plus, ExternalLink, Apple, CreditCard, Send, Check } from 'lucide-react';
+import { Search, ChevronRight, Plus, ExternalLink, Apple, CreditCard, Send, Check, FileText } from 'lucide-react';
 import { InstructorAlignmentDrawing, BotanicalBranchDrawing } from '../common/StudioDrawings';
 
 interface InstructorClientsViewProps {
@@ -176,13 +176,22 @@ export const InstructorClientsView: React.FC<InstructorClientsViewProps> = ({ on
 
             {/* Diet Plan Summary Chip */}
             <div className="p-3 bg-[#FAF8F5] dark:bg-[#242D26] rounded-2xl border border-stone-200/80 dark:border-stone-800 flex items-center justify-between text-xs">
-              <div className="flex items-center gap-2 text-stone-800 dark:text-stone-200 font-semibold">
+              <div className="flex items-center gap-2 text-stone-800 dark:text-stone-200 font-semibold truncate">
                 <Apple className="w-4 h-4 text-emerald-700 dark:text-emerald-400 shrink-0" />
-                <span className="truncate max-w-[200px] sm:max-w-xs">{c.dietPlan?.planTitle || 'Studio Fat-Loss Plan'}</span>
+                <span className="truncate max-w-[170px] sm:max-w-xs">{c.dietPlan?.planTitle || 'Studio Fat-Loss Plan'}</span>
               </div>
-              <span className="text-stone-500 font-medium">
-                {c.dietPlan?.metrics.targetWeight || 'Goal: 72 kg'}
-              </span>
+              <div className="flex items-center gap-1.5 shrink-0">
+                {c.importedDietPdf ? (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1">
+                    <FileText className="w-3 h-3 text-emerald-700" />
+                    <span>PDF Attached</span>
+                  </span>
+                ) : (
+                  <span className="text-stone-500 font-medium">
+                    {c.dietPlan?.metrics.targetWeight || 'Goal: 72 kg'}
+                  </span>
+                )}
+              </div>
             </div>
 
             {/* Action Buttons: 3 clean actions */}
@@ -202,7 +211,8 @@ export const InstructorClientsView: React.FC<InstructorClientsViewProps> = ({ on
                 onClick={() => onOpenDossier(c, 'diet')}
                 className="py-2.5 px-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/70 hover:bg-emerald-100 text-emerald-900 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-800 font-bold flex items-center justify-center gap-1.5 transition-colors"
               >
-                <span>Edit Diet Plan</span>
+                <FileText className="w-3.5 h-3.5 text-emerald-800" />
+                <span>Diet &amp; PDF</span>
               </button>
 
               <button
