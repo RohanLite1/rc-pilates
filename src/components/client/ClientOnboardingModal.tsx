@@ -9,6 +9,7 @@ import {
   Bell
 } from 'lucide-react';
 import { PilatesReformerDrawing } from '../common/StudioDrawings';
+import { StudioLogo } from '../common/StudioLogo';
 
 export const ClientOnboardingModal: React.FC = () => {
   const { currentUser, completeClientOnboarding } = useApp();
@@ -44,7 +45,10 @@ export const ClientOnboardingModal: React.FC = () => {
             <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#FAF6F0] text-[#675137] border border-[#D5C0A4]">
               New Member Setup • Step {step} of 3
             </span>
-            <span className="text-xs text-[#786B5D] font-medium">RC Pilates Studio</span>
+            <div className="flex items-center gap-1.5">
+              <StudioLogo size="xs" variant="transparent" />
+              <span className="text-xs text-[#786B5D] font-bold">RC Pilates Studio</span>
+            </div>
           </div>
 
           <h2 className="font-serif text-2xl font-bold tracking-tight text-[#2D251E] leading-tight">

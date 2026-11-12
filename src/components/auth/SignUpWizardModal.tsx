@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { StudioLogo } from '../common/StudioLogo';
 import {
   User,
   Mail,
@@ -129,10 +130,8 @@ export const SignUpWizardModal: React.FC<SignUpWizardModalProps> = ({ onCancel }
         {/* Wizard Header & Stepper */}
         <div className="p-5 border-b border-[#EAE1D4] bg-white/80 backdrop-blur-md">
           <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-[#675137] text-white flex items-center justify-center font-serif font-bold text-xs shadow-xs">
-                RC
-              </div>
+            <div className="flex items-center gap-2.5">
+              <StudioLogo size="sm" variant="transparent" withRing className="bg-[#FAF6F0]" />
               <div>
                 <h2 className="font-serif font-bold text-base text-[#2D251E] leading-tight">
                   New Member Setup

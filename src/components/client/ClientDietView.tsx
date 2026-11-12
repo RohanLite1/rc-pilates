@@ -33,6 +33,7 @@ import {
   PeacefulMoonDrawing,
   WholeFruitHarvestDrawing
 } from '../common/StudioDrawings';
+import { StudioLogo } from '../common/StudioLogo';
 
 export const ClientDietView: React.FC = () => {
   const { currentUser, addWaterLog } = useApp();
@@ -79,7 +80,7 @@ export const ClientDietView: React.FC = () => {
       <div className="rounded-3xl p-5 bg-gradient-to-br from-[#FAF6F0] via-[#F4EFEA] to-[#EAE0D2] text-[#2D251E] shadow-ambient border border-[#D5C0A4] relative overflow-hidden">
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs font-semibold text-[#675137] flex items-center gap-1.5 bg-[#FAF6F0] px-2.5 py-1 rounded-full border border-[#D5C0A4]/80 shadow-xs">
-            <Sparkles className="w-3.5 h-3.5 text-[#7B6244]" />
+            <StudioLogo size="xs" variant="transparent" />
             <span>RC Pilates Nutrition</span>
           </span>
           <div className="flex items-center gap-2">

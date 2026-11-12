@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles } from 'lucide-react';
+import { StudioLogo } from './StudioLogo';
 
 interface StartupAnimationProps {
   onFinish?: () => void;
@@ -41,10 +41,9 @@ export const StartupAnimation: React.FC<StartupAnimationProps> = ({ onFinish }) 
         <div className="absolute -inset-10 rounded-full bg-[#EADCCE]/40 animate-ping opacity-30 pointer-events-none" />
         <div className="absolute -inset-6 rounded-full bg-[#F2E9DC]/60 animate-pulse pointer-events-none" />
 
-        {/* Center studio monogram emblem */}
-        <div className="relative w-20 h-20 rounded-full bg-[#675137] text-white flex items-center justify-center font-serif font-bold text-3xl shadow-[0_10px_35px_rgba(103,81,55,0.28)] ring-4 ring-[#E6D7C3] transform transition-transform duration-700 hover:scale-105">
-          <span>RC</span>
-          <Sparkles className="w-4 h-4 text-[#D5C0A4] absolute top-2 right-2 animate-pulse" />
+        {/* Center studio logo emblem */}
+        <div className="relative w-28 h-28 rounded-full bg-[#FAF6F0] p-1 flex items-center justify-center shadow-[0_10px_35px_rgba(103,81,55,0.22)] ring-4 ring-[#E6D7C3] transform transition-transform duration-700 hover:scale-105 overflow-hidden">
+          <StudioLogo size="2xl" variant="transparent" className="w-full h-full" />
         </div>
 
         {/* Studio Branding */}

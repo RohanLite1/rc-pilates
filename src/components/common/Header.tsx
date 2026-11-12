@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Sparkles, LogOut, ChevronDown, Shield, User, Menu } from 'lucide-react';
+import { LogOut, ChevronDown, Shield, User, Menu } from 'lucide-react';
+import { StudioLogo } from './StudioLogo';
 
 export const Header: React.FC = () => {
   const { currentUser, logout, switchUser, instructor, clients, toggleDrawer, isDrawerOpen } = useApp();
@@ -33,9 +34,7 @@ export const Header: React.FC = () => {
 
           {/* Studio Branding */}
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-emerald-800 dark:bg-emerald-700 text-white flex items-center justify-center shadow-ambient-sm">
-              <Sparkles className="w-4 h-4 text-emerald-200" />
-            </div>
+            <StudioLogo size="sm" variant="transparent" withRing className="bg-[#FAF6F0]" />
             <div>
               <div className="flex items-center gap-1.5">
                 <span className="font-serif font-bold text-lg tracking-tight text-stone-900 dark:text-[#EDF3EC] leading-none">

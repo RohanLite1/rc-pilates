@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { BotanicalBranchDrawing } from './StudioDrawings';
 import { NotificationDemoCard } from './NotificationDemoCard';
+import { StudioLogo } from './StudioLogo';
 
 export const ProfileView: React.FC = () => {
   const { currentUser, logout } = useApp();
@@ -33,6 +34,8 @@ export const ProfileView: React.FC = () => {
               alt={currentUser.displayName}
               className="w-full h-full rounded-full object-cover"
             />
+          ) : currentUser.role === 'instructor' ? (
+            <StudioLogo size="2xl" variant="transparent" className="w-full h-full p-1 bg-[#FAF6F0]" />
           ) : (
             <div className="w-full h-full rounded-full bg-emerald-800 text-white flex items-center justify-center font-serif text-2xl font-bold tracking-wider shadow-inner">
               {currentUser.displayName ? currentUser.displayName.split(' ').map(n => n[0]).join('') : 'RC'}
@@ -220,13 +223,16 @@ export const ProfileView: React.FC = () => {
       </div>
 
       {/* Studio Location & Contact */}
-      <div className="bg-white dark:bg-[#1C231E] rounded-3xl p-5 shadow-ambient border border-stone-200/80 dark:border-stone-800 space-y-2 text-xs transition-colors">
-        <h3 className="font-serif font-bold text-sm text-stone-900 dark:text-stone-100">
-          RC Pilates &amp; Fitness Studio
-        </h3>
-        <p className="text-stone-600 dark:text-stone-400 leading-relaxed text-[11px]">
-          Classical &amp; contemporary reformer training, posture correction, and tailored nutrition.
-        </p>
+      <div className="bg-white dark:bg-[#1C231E] rounded-3xl p-5 shadow-ambient border border-stone-200/80 dark:border-stone-800 flex items-center gap-4 text-xs transition-colors">
+        <StudioLogo size="lg" variant="transparent" withRing className="bg-[#FAF6F0]" />
+        <div className="space-y-1">
+          <h3 className="font-serif font-bold text-sm text-stone-900 dark:text-stone-100">
+            RC Pilates &amp; Fitness Studio
+          </h3>
+          <p className="text-stone-600 dark:text-stone-400 leading-relaxed text-[11px]">
+            Estd 2025 • Classical &amp; contemporary reformer training, posture correction, and tailored nutrition.
+          </p>
+        </div>
       </div>
 
       {/* Sign Out Button */}

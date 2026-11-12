@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import {
-  Sparkles,
   User,
   Lock,
   Mail,
@@ -12,8 +11,8 @@ import {
   Apple,
   UserPlus
 } from 'lucide-react';
-import { PilatesReformerDrawing } from '../common/StudioDrawings';
 import { SignUpWizardModal } from './SignUpWizardModal';
+import { StudioLogo } from '../common/StudioLogo';
 
 export const LoginModal: React.FC = () => {
   const { loginWithGoogle, loginWithCredentials } = useApp();
@@ -51,10 +50,8 @@ export const LoginModal: React.FC = () => {
     <div className="w-full min-h-screen flex flex-col justify-between p-4 sm:p-6 md:p-8 bg-[#F9F6F0] text-[#2D251E] select-none transition-colors duration-200">
       {/* Top Studio Brand Bar */}
       <header className="w-full max-w-md mx-auto pt-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-emerald-800 text-white flex items-center justify-center shadow-xs">
-            <Sparkles className="w-4 h-4 text-emerald-200" />
-          </div>
+        <div className="flex items-center gap-2.5">
+          <StudioLogo size="sm" variant="transparent" withRing className="bg-[#FAF6F0]" />
           <div>
             <span className="font-serif font-bold text-lg text-stone-900 tracking-tight block leading-tight">
               RC Pilates
@@ -69,10 +66,12 @@ export const LoginModal: React.FC = () => {
 
       {/* Main Landing & Login Container */}
       <div className="w-full max-w-md mx-auto my-auto py-6 space-y-6">
-        {/* Landing Hero Message with Studio Drawing */}
+        {/* Landing Hero Message with Official Studio Logo */}
         <div className="text-center space-y-3">
-          <div className="w-full max-w-xs mx-auto py-1">
-            <PilatesReformerDrawing className="w-full h-auto text-emerald-800 drop-shadow-xs" />
+          <div className="flex justify-center pb-2">
+            <div className="relative p-2 rounded-full bg-white ring-4 ring-[#E6D7C3]/90 shadow-[0_8px_30px_rgba(103,81,55,0.14)]">
+              <StudioLogo size="xl" variant="transparent" />
+            </div>
           </div>
 
           <div>

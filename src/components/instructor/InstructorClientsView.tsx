@@ -3,6 +3,7 @@ import { useApp } from '../../context/AppContext';
 import type { UserProfile } from '../../types';
 import { Search, ChevronRight, Plus, ExternalLink, Apple, CreditCard, Send, Check, FileText } from 'lucide-react';
 import { InstructorAlignmentDrawing, BotanicalBranchDrawing } from '../common/StudioDrawings';
+import { StudioLogo } from '../common/StudioLogo';
 
 interface InstructorClientsViewProps {
   onOpenDossier: (client: UserProfile, initialTab?: 'diet' | 'attendance') => void;
@@ -43,9 +44,12 @@ export const InstructorClientsView: React.FC<InstructorClientsViewProps> = ({ on
       {/* Studio Member Header with Artwork */}
       <div className="bg-white dark:bg-[#1C231E] rounded-3xl p-5 shadow-ambient border border-stone-200/80 dark:border-stone-800 flex items-center justify-between transition-colors relative overflow-hidden">
         <div>
-          <span className="text-xs font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/80 px-2.5 py-0.5 rounded-md">
-            RC Pilates Roster
-          </span>
+          <div className="flex items-center gap-2 mb-1">
+            <StudioLogo size="xs" variant="transparent" />
+            <span className="text-xs font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/80 px-2.5 py-0.5 rounded-md">
+              RC Pilates Roster
+            </span>
+          </div>
           <h2 className="font-serif text-2xl font-bold text-stone-900 dark:text-stone-100 mt-1">
             Studio Members ({clients.length})
           </h2>

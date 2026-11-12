@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
+import { StudioLogo } from '../common/StudioLogo';
 import {
   CalendarCheck,
   Clock,
@@ -111,9 +112,7 @@ export const AppDrawer: React.FC = () => {
         <div className="p-5 border-b border-[#EAE1D4] dark:border-[#383129] bg-white/80 dark:bg-[#26211C]/80 backdrop-blur-md">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-full bg-emerald-800 text-white flex items-center justify-center font-serif font-bold text-sm shadow-ambient-sm">
-                RC
-              </div>
+              <StudioLogo size="sm" variant="transparent" withRing className="bg-[#FAF6F0]" />
               <div>
                 <span className="font-serif font-bold text-base tracking-tight leading-none block text-[#2D251E] dark:text-[#F7F3ED]">
                   RC Pilates
