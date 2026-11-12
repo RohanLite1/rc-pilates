@@ -1,0 +1,1035 @@
+import React, { useState } from 'react';
+import { useApp } from '../../context/AppContext';
+import type { UserProfile, StudioDietPlan, DietDayPlan, DietMealSlot } from '../../types';
+import {
+  CheckCircle2,
+  XCircle,
+  Clock,
+  Apple,
+  Calendar,
+  Plus,
+  Trash2,
+  Save,
+  ExternalLink,
+  Shield,
+  RotateCcw,
+  Target,
+  Utensils
+} from 'lucide-react';
+import {
+  AVAILABLE_STUDIO_TIMESLOTS,
+  DEFAULT_STUDIO_DIET_PLAN,
+  SAMPLE_MEAL_TYPES,
+  SAMPLE_STUDIO_FOODS
+} from '../../data/mockData';
+import { DayOfWeekPicker } from '../common/DayOfWeekPicker';
+import { StudioTimeslotSelect } from '../common/StudioTimeslotSelect';
+import {
+  PilatesReformerDrawing,
+  InstructorAlignmentDrawing,
+  WholesomeBowlDrawing,
+  MindfulTeaDrawing,
+  BotanicalBranchDrawing,
+  WaterCarafeDrawing,
+  GentleWalkingPathDrawing,
+  PeacefulMoonDrawing,
+  WholeFruitHarvestDrawing
+} from '../common/StudioDrawings';
+
+interface ClientDossierModalProps {
+  client: UserProfile;
+  initialTab?: 'diet' | 'attendance';
+  onClose: () => void;
+}
+
+export const ClientDossierModal: React.FC<ClientDossierModalProps> = ({
+  client,
+  initialTab = 'diet',
+  onClose
+}) => {
+  const {
+    sessions,
+    updateAttendance,
+    createOrUpdateSession,
+    updateClientDietPlan,
+    switchUser
+  } = useApp();
+
+  const [activeMainTab, setActiveMainTab] = useState<'diet' | 'attendance'>(initialTab);
+  const [dietSubPanel, setDietSubPanel] = useState<'targets' | 'meals' | 'habits'>('meals');
+  const [editingDayNum, setEditingDayNum] = useState<number>(1);
+  const [savedFeedback, setSavedFeedback] = useState<string>('');
+
+  // Local state clone for Diet Plan
+  const initialPlan = client.dietPlan || {
+    ...DEFAULT_STUDIO_DIET_PLAN,
+    clientName: client.displayName
+  };
+
+  const [planTitle, setPlanTitle] = useState<string>(initialPlan.planTitle);
+  const [metrics, setMetrics] = useState(initialPlan.metrics);
+  const [strategy, setStrategy] = useState(initialPlan.strategy);
+  const [days, setDays] = useState<DietDayPlan[]>(initialPlan.days);
+
+  // New Timeslot state for this specific client (Multi-day alarm style with Starting & Ending dates)
+  const [newSlotTitle, setNewSlotTitle] = useState<string>('Pilates Session');
+  const [newSlotDate, setNewSlotDate] = useState<string>('2026-11-09');
+  const [newSlotEndDate, setNewSlotEndDate] = useState<string>('2026-12-06');
+  const [newSlotTime, setNewSlotTime] = useState<string>(AVAILABLE_STUDIO_TIMESLOTS[1]);
+  const [selectedDays, setSelectedDays] = useState<number[]>([1, 2, 3, 4, 5]); // default Mon-Fri
+  const [newSlotRepeatWeeks, setNewSlotRepeatWeeks] = useState<number>(4);
+  const [showAddSlot, setShowAddSlot] = useState<boolean>(false);
+
+  // Helper to adjust ending date when duration or start date changes
+  const updateDatesFromDuration = (weeks: number, baseStartDate: string = newSlotDate) => {
+    setNewSlotRepeatWeeks(weeks);
+    try {
+      const [y, m, d] = baseStartDate.split('-').map(Number);
+      const end = new Date(y, m - 1, d);
+      end.setDate(end.getDate() + weeks * 7 - 1);
+      const ey = end.getFullYear();
+      const em = String(end.getMonth() + 1).padStart(2, '0');
+      const ed = String(end.getDate()).padStart(2, '0');
+      setNewSlotEndDate(`${ey}-${em}-${ed}`);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const clientSessions = sessions.filter(s => s.clientId === client.id);
+
+  // Load standard studio 1600 kcal fat loss template
+  const handleLoadStudioTemplate = () => {
+    setPlanTitle('Short-Term Maximum Safe Fat-Loss Plan');
+    setMetrics({
+      ...DEFAULT_STUDIO_DIET_PLAN.metrics,
+      ageSex: client.bio?.includes('Male') ? '34 / Male' : '52 / Female'
+    });
+    setStrategy({ ...DEFAULT_STUDIO_DIET_PLAN.strategy });
+    setDays([...DEFAULT_STUDIO_DIET_PLAN.days]);
+    setSavedFeedback('Loaded 1,600 kcal Studio Preset!');
+    setTimeout(() => setSavedFeedback(''), 2500);
+  };
+
+  // Save Diet Plan
+  const handleSaveDietPlan = () => {
+    const updatedPlan: StudioDietPlan = {
+      id: client.dietPlan?.id || `diet-${Date.now()}`,
+      planTitle,
+      clientName: client.displayName,
+      assignedDate: 'Updated Nov 2026',
+      status: 'active',
+      metrics,
+      strategy,
+      days,
+      currentWaterLiters: client.dietPlan?.currentWaterLiters || 1.8,
+      instructorNotes: client.dietPlan?.instructorNotes || DEFAULT_STUDIO_DIET_PLAN.instructorNotes
+    };
+
+    updateClientDietPlan(client.id, updatedPlan);
+    setSavedFeedback('Plan Saved & Assigned to ' + client.displayName + '!');
+    setTimeout(() => setSavedFeedback(''), 3000);
+  };
+
+  // Day Meals Helpers
+  const currentEditingDay = days.find(d => d.dayNumber === editingDayNum) || days[0];
+
+  const handleUpdateMeal = (mealId: string, updates: Partial<DietMealSlot>) => {
+    setDays(prev =>
+      prev.map(d => {
+        if (d.dayNumber === editingDayNum) {
+          const updatedMeals = d.meals.map(m => (m.id === mealId ? { ...m, ...updates } : m));
+          const totalCals = updatedMeals.reduce((sum, m) => sum + (Number(m.caloriesKcal) || 0), 0);
+          return {
+            ...d,
+            meals: updatedMeals,
+            totalCalories: totalCals
+          };
+        }
+        return d;
+      })
+    );
+  };
+
+  const handleAddMealToDay = () => {
+    const newMeal: DietMealSlot = {
+      id: `meal-${Date.now()}`,
+      time: '12:00 PM',
+      mealName: 'Lunch',
+      foodDescription: '150 g chicken/fish + 120 g cooked rice + 250 g vegetables + salad',
+      caloriesKcal: 480
+    };
+
+    setDays(prev =>
+      prev.map(d => {
+        if (d.dayNumber === editingDayNum) {
+          const updated = [...d.meals, newMeal];
+          return {
+            ...d,
+            meals: updated,
+            totalCalories: updated.reduce((sum, m) => sum + m.caloriesKcal, 0)
+          };
+        }
+        return d;
+      })
+    );
+  };
+
+  const handleDeleteMeal = (mealId: string) => {
+    setDays(prev =>
+      prev.map(d => {
+        if (d.dayNumber === editingDayNum) {
+          const updated = d.meals.filter(m => m.id !== mealId);
+          return {
+            ...d,
+            meals: updated,
+            totalCalories: updated.reduce((sum, m) => sum + m.caloriesKcal, 0)
+          };
+        }
+        return d;
+      })
+    );
+  };
+
+  // Timeslot handler (multi-day alarm-style schedule with start and end dates)
+  const handleAssignSlot = (e: React.FormEvent) => {
+    e.preventDefault();
+    createOrUpdateSession({
+      sessionTitle: newSlotTitle || 'Pilates Session',
+      startDate: newSlotDate,
+      endDate: newSlotEndDate,
+      time: newSlotTime,
+      clientId: client.id,
+      clientName: client.displayName,
+      status: 'scheduled',
+      selectedDays: selectedDays.length > 0 ? selectedDays : undefined,
+      repeatWeeks: newSlotRepeatWeeks
+    });
+    setShowAddSlot(false);
+    const summary = selectedDays.length > 0
+      ? `Scheduled classes from ${newSlotDate} to ${newSlotEndDate}!`
+      : `Class scheduled for ${newSlotDate}!`;
+    setSavedFeedback(summary);
+    setTimeout(() => setSavedFeedback(''), 3000);
+  };
+
+  const renderMealDrawing = (mealName: string) => {
+    const lower = mealName.toLowerCase();
+    if (lower.includes('breakfast') || lower.includes('tea')) {
+      return <MindfulTeaDrawing className="w-10 h-10 text-emerald-800/40 dark:text-emerald-300/40 shrink-0" />;
+    }
+    if (lower.includes('snack') || lower.includes('fruit')) {
+      return <WholeFruitHarvestDrawing className="w-10 h-10 text-emerald-800/40 dark:text-emerald-300/40 shrink-0" />;
+    }
+    return <WholesomeBowlDrawing className="w-10 h-10 text-emerald-800/40 dark:text-emerald-300/40 shrink-0" />;
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-y-auto animate-in fade-in">
+      <div className="bg-[#FAF8F5] dark:bg-[#131814] rounded-3xl w-full max-w-2xl max-h-[92vh] flex flex-col shadow-2xl border border-stone-200 dark:border-stone-800 overflow-hidden text-stone-900 dark:text-[#EDF3EC] transition-colors">
+        {/* Modal Top Bar */}
+        <div className="px-5 py-4 bg-white dark:bg-[#1C231E] border-b border-stone-200 dark:border-stone-800 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <img
+              src={client.avatarUrl}
+              alt={client.displayName}
+              className="w-11 h-11 rounded-full object-cover ring-2 ring-emerald-600/20"
+            />
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-serif font-bold text-lg leading-tight">
+                  {client.displayName}
+                </h3>
+                <span className="text-xs font-semibold bg-emerald-100 dark:bg-emerald-950 text-emerald-900 dark:text-emerald-300 px-2.5 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-800">
+                  {client.membershipTier || 'Member'}
+                </span>
+              </div>
+              <p className="text-xs text-stone-500 dark:text-stone-400">{client.email}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                onClose();
+                switchUser(client);
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 text-stone-800 dark:text-stone-200 text-xs font-bold transition-colors"
+              title="View as this client immediately"
+            >
+              <ExternalLink className="w-4 h-4" />
+              <span className="hidden sm:inline">View as Client</span>
+            </button>
+
+            <button
+              onClick={onClose}
+              className="w-9 h-9 rounded-full bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 flex items-center justify-center text-stone-500 dark:text-stone-400 font-bold text-base transition-colors"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+
+        {/* Tab Switcher: Diet Plan Protocol vs Timeslots */}
+        <div className="px-5 pt-3 bg-white dark:bg-[#1C231E] border-b border-stone-200 dark:border-stone-800 flex items-center justify-between gap-2">
+          <div className="flex gap-2">
+            <button
+              onClick={() => setActiveMainTab('diet')}
+              className={`py-2.5 px-3.5 text-sm font-bold rounded-t-2xl transition-all flex items-center gap-2 border-b-2 ${
+                activeMainTab === 'diet'
+                  ? 'border-emerald-800 text-emerald-900 dark:text-emerald-300 bg-[#FAF8F5] dark:bg-[#131814]'
+                  : 'border-transparent text-stone-500 hover:text-stone-800 dark:hover:text-stone-300'
+              }`}
+            >
+              <Apple className="w-4 h-4" />
+              <span>Studio Diet Designer</span>
+            </button>
+
+            <button
+              onClick={() => setActiveMainTab('attendance')}
+              className={`py-2.5 px-3.5 text-sm font-bold rounded-t-2xl transition-all flex items-center gap-2 border-b-2 ${
+                activeMainTab === 'attendance'
+                  ? 'border-emerald-800 text-emerald-900 dark:text-emerald-300 bg-[#FAF8F5] dark:bg-[#131814]'
+                  : 'border-transparent text-stone-500 hover:text-stone-800 dark:hover:text-stone-300'
+              }`}
+            >
+              <Calendar className="w-4 h-4" />
+              <span>Classes ({clientSessions.length})</span>
+            </button>
+          </div>
+
+          {activeMainTab === 'diet' && (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleLoadStudioTemplate}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/70 hover:bg-emerald-100 rounded-xl border border-emerald-300 dark:border-emerald-700"
+                title="Load 1,600 kcal template preset"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Load Studio Preset</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleSaveDietPlan}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-xs shadow-md"
+              >
+                <Save className="w-3.5 h-3.5" />
+                <span>Save</span>
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Feedback message banner */}
+        {savedFeedback && (
+          <div className="bg-emerald-100 dark:bg-emerald-950 px-5 py-2.5 text-sm font-bold text-emerald-950 dark:text-emerald-200 border-b border-emerald-300 dark:border-emerald-800 flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-700 dark:text-emerald-400 shrink-0" />
+            <span>{savedFeedback}</span>
+          </div>
+        )}
+
+        {/* Modal Body */}
+        <div className="flex-1 overflow-y-auto p-5 space-y-4">
+          {activeMainTab === 'diet' ? (
+            <div className="space-y-4 text-sm">
+              {/* Diet Sub-Panels (Minimal content on screen at one time) */}
+              <div className="grid grid-cols-3 gap-2 bg-stone-100 dark:bg-[#1C231E] p-1.5 rounded-2xl border border-stone-200 dark:border-stone-800">
+                <button
+                  type="button"
+                  onClick={() => setDietSubPanel('meals')}
+                  className={`py-2 px-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1.5 ${
+                    dietSubPanel === 'meals'
+                      ? 'bg-emerald-800 text-white shadow-sm'
+                      : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
+                  }`}
+                >
+                  <Utensils className="w-4 h-4" />
+                  <span>7-Day Meals</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setDietSubPanel('targets')}
+                  className={`py-2 px-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1.5 ${
+                    dietSubPanel === 'targets'
+                      ? 'bg-emerald-800 text-white shadow-sm'
+                      : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
+                  }`}
+                >
+                  <Target className="w-4 h-4" />
+                  <span>Target Goals</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setDietSubPanel('habits')}
+                  className={`py-2 px-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1.5 ${
+                    dietSubPanel === 'habits'
+                      ? 'bg-emerald-800 text-white shadow-sm'
+                      : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
+                  }`}
+                >
+                  <Shield className="w-4 h-4" />
+                  <span>Rules &amp; Habits</span>
+                </button>
+              </div>
+
+              {/* SUB-PANEL 1: 7-DAY MEALS EDITOR */}
+              {dietSubPanel === 'meals' && (
+                <div className="space-y-4 animate-in fade-in duration-150">
+                  {/* Day Picker Pills */}
+                  <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                    {days.map(d => (
+                      <button
+                        key={d.dayNumber}
+                        type="button"
+                        onClick={() => setEditingDayNum(d.dayNumber)}
+                        className={`py-2 px-3.5 rounded-2xl font-bold text-xs sm:text-sm whitespace-nowrap transition-all ${
+                          editingDayNum === d.dayNumber
+                            ? 'bg-emerald-800 text-white shadow-md'
+                            : 'bg-white dark:bg-[#1C231E] border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300'
+                        }`}
+                      >
+                        {d.dayLabel} ({d.totalCalories} kcal)
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Day Focus Header & Add Button */}
+                  <div className="bg-white dark:bg-[#1C231E] p-4 rounded-3xl border border-stone-200 dark:border-stone-800 flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex-1 min-w-[200px]">
+                      <label className="block text-xs font-bold text-stone-500 mb-1">
+                        {currentEditingDay.dayLabel} Focus Title
+                      </label>
+                      <input
+                        type="text"
+                        value={currentEditingDay.focusTag || ''}
+                        onChange={e =>
+                          setDays(prev =>
+                            prev.map(d =>
+                              d.dayNumber === editingDayNum ? { ...d, focusTag: e.target.value } : d
+                            )
+                          )
+                        }
+                        placeholder="e.g. Moong Dal Chilla & High Protein"
+                        className="w-full p-2.5 bg-[#FAF8F5] dark:bg-[#242D26] border border-stone-200 dark:border-stone-700 rounded-xl font-bold text-sm"
+                      />
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleAddMealToDay}
+                      className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950 text-emerald-900 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 font-bold text-xs shadow-xs self-end"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Add Meal</span>
+                    </button>
+                  </div>
+
+                  {/* Meal Cards for Selected Day */}
+                  <div className="space-y-3">
+                    {currentEditingDay.meals.map(meal => (
+                      <div
+                        key={meal.id}
+                        className="p-4 bg-white dark:bg-[#1C231E] rounded-3xl border border-stone-200 dark:border-stone-800 space-y-3 shadow-ambient"
+                      >
+                        <div className="flex items-center gap-3">
+                          {renderMealDrawing(meal.mealName)}
+                          <div className="flex-1">
+                            <span className="text-xs font-bold text-emerald-800 dark:text-emerald-400">
+                              {meal.mealName}
+                            </span>
+                            <p className="text-xs text-stone-500 font-semibold">{meal.time}</p>
+                          </div>
+                          <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950 px-2.5 py-1 rounded-xl border border-emerald-200 dark:border-emerald-800">
+                            {meal.caloriesKcal} kcal
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                          {/* Time */}
+                          <div>
+                            <label className="block text-xs font-bold text-stone-500 mb-1">Time</label>
+                            <input
+                              type="text"
+                              value={meal.time}
+                              onChange={e => handleUpdateMeal(meal.id, { time: e.target.value })}
+                              placeholder="e.g. 8:00 AM"
+                              className="w-full p-2 bg-[#FAF8F5] dark:bg-[#242D26] border border-stone-200 dark:border-stone-700 rounded-xl font-semibold"
+                            />
+                          </div>
+
+                          {/* Meal Type Dropdown */}
+                          <div>
+                            <label className="block text-xs font-bold text-stone-500 mb-1">Meal Type</label>
+                            <select
+                              value={meal.mealName}
+                              onChange={e => handleUpdateMeal(meal.id, { mealName: e.target.value })}
+                              className="w-full p-2 bg-[#FAF8F5] dark:bg-[#242D26] border border-stone-200 dark:border-stone-700 rounded-xl font-semibold"
+                            >
+                              {SAMPLE_MEAL_TYPES.map(mt => (
+                                <option key={mt} value={mt}>
+                                  {mt}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          {/* Calories */}
+                          <div>
+                            <label className="block text-xs font-bold text-stone-500 mb-1">Calories (kcal)</label>
+                            <input
+                              type="number"
+                              value={meal.caloriesKcal}
+                              onChange={e =>
+                                handleUpdateMeal(meal.id, { caloriesKcal: Number(e.target.value) || 0 })
+                              }
+                              className="w-full p-2 bg-[#FAF8F5] dark:bg-[#242D26] border border-stone-200 dark:border-stone-700 rounded-xl font-semibold text-emerald-800 dark:text-emerald-300"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Food Description with Studio Suggestions Dropdown */}
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <label className="block text-xs font-bold text-stone-500">
+                              Food &amp; Portion Size
+                            </label>
+                            <select
+                              onChange={e => {
+                                if (e.target.value) {
+                                  handleUpdateMeal(meal.id, { foodDescription: e.target.value });
+                                }
+                              }}
+                              className="text-xs bg-[#FAF8F5] dark:bg-[#242D26] text-emerald-800 dark:text-emerald-300 border border-stone-200 dark:border-stone-700 rounded-lg px-2 py-1 font-semibold"
+                            >
+                              <option value="">(Choose Studio Dish...)</option>
+                              {SAMPLE_STUDIO_FOODS.map(f => (
+                                <option key={f} value={f}>
+                                  {f.slice(0, 42)}...
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <input
+                            type="text"
+                            value={meal.foodDescription}
+                            onChange={e => handleUpdateMeal(meal.id, { foodDescription: e.target.value })}
+                            placeholder="e.g. 2 moong-dal chillas from ~70 g dry dal + 100 g curd + vegetables"
+                            className="w-full p-2.5 bg-[#FAF8F5] dark:bg-[#242D26] border border-stone-200 dark:border-stone-700 rounded-xl text-sm"
+                          />
+                        </div>
+
+                        <div className="flex justify-end pt-1">
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteMeal(meal.id)}
+                            className="text-xs text-rose-600 hover:text-rose-800 flex items-center gap-1 font-bold"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Delete Meal</span>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* SUB-PANEL 2: TARGETS & CONSTRAINTS */}
+              {dietSubPanel === 'targets' && (
+                <div className="space-y-4 animate-in fade-in duration-150">
+                  {/* Live Visual Metric Preview Grid */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <div className="p-3 bg-emerald-50 dark:bg-emerald-950/60 rounded-2xl border border-emerald-200 dark:border-emerald-800 text-center">
+                      <WholesomeBowlDrawing className="w-7 h-7 mx-auto text-emerald-800 dark:text-emerald-300 mb-1" />
+                      <span className="block text-[11px] text-stone-500 font-semibold">Daily Intake</span>
+                      <span className="font-serif font-bold text-sm text-emerald-900 dark:text-emerald-200">
+                        {metrics.dailyIntake}
+                      </span>
+                    </div>
+
+                    <div className="p-3 bg-emerald-50 dark:bg-emerald-950/60 rounded-2xl border border-emerald-200 dark:border-emerald-800 text-center">
+                      <BotanicalBranchDrawing className="w-7 h-7 mx-auto text-emerald-800 dark:text-emerald-300 mb-1" />
+                      <span className="block text-[11px] text-stone-500 font-semibold">Protein Target</span>
+                      <span className="font-serif font-bold text-sm text-emerald-900 dark:text-emerald-200">
+                        {metrics.proteinTarget}
+                      </span>
+                    </div>
+
+                    <div className="p-3 bg-emerald-50 dark:bg-emerald-950/60 rounded-2xl border border-emerald-200 dark:border-emerald-800 text-center">
+                      <GentleWalkingPathDrawing className="w-7 h-7 mx-auto text-emerald-800 dark:text-emerald-300 mb-1" />
+                      <span className="block text-[11px] text-stone-500 font-semibold">Goal Weight</span>
+                      <span className="font-serif font-bold text-sm text-emerald-900 dark:text-emerald-200">
+                        {metrics.targetWeight}
+                      </span>
+                    </div>
+
+                    <div className="p-3 bg-emerald-50 dark:bg-emerald-950/60 rounded-2xl border border-emerald-200 dark:border-emerald-800 text-center">
+                      <WaterCarafeDrawing className="w-7 h-7 mx-auto text-emerald-800 dark:text-emerald-300 mb-1" />
+                      <span className="block text-[11px] text-stone-500 font-semibold">Hydration</span>
+                      <span className="font-serif font-bold text-sm text-emerald-900 dark:text-emerald-200">
+                        2.5L / Day
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="bg-white dark:bg-[#1C231E] p-5 rounded-3xl border border-stone-200 dark:border-stone-800 space-y-4">
+                    <h4 className="font-serif font-bold text-base flex items-center gap-2">
+                      <Target className="w-5 h-5 text-emerald-800 dark:text-emerald-400" />
+                      <span>Member Profile Parameters</span>
+                    </h4>
+
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-xs font-bold text-stone-500 mb-1">
+                          Plan Title
+                        </label>
+                        <input
+                          type="text"
+                          value={planTitle}
+                          onChange={e => setPlanTitle(e.target.value)}
+                          className="w-full p-2.5 bg-[#FAF8F5] dark:bg-[#242D26] border border-stone-200 dark:border-stone-700 rounded-xl font-serif font-bold text-base"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-bold text-stone-500 mb-1">
+                            Current Height &amp; Weight
+                          </label>
+                          <input
+                            type="text"
+                            value={metrics.heightWeight}
+                            onChange={e => setMetrics({ ...metrics, heightWeight: e.target.value })}
+                            placeholder="e.g. 5'7&quot; / 80 kg"
+                            className="w-full p-2.5 bg-[#FAF8F5] dark:bg-[#242D26] border border-stone-200 dark:border-stone-700 rounded-xl font-semibold"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-stone-500 mb-1">
+                            Goal Target Weight
+                          </label>
+                          <input
+                            type="text"
+                            value={metrics.targetWeight}
+                            onChange={e => setMetrics({ ...metrics, targetWeight: e.target.value })}
+                            placeholder="e.g. Goal 72 kg"
+                            className="w-full p-2.5 bg-[#FAF8F5] dark:bg-[#242D26] border border-stone-200 dark:border-stone-700 rounded-xl font-semibold text-emerald-800 dark:text-emerald-300"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-stone-500 mb-1">
+                            Daily Caloric Intake
+                          </label>
+                          <input
+                            type="text"
+                            value={metrics.dailyIntake}
+                            onChange={e => setMetrics({ ...metrics, dailyIntake: e.target.value })}
+                            placeholder="e.g. ~1,600 kcal/day"
+                            className="w-full p-2.5 bg-[#FAF8F5] dark:bg-[#242D26] border border-stone-200 dark:border-stone-700 rounded-xl font-semibold text-emerald-800 dark:text-emerald-300"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-stone-500 mb-1">
+                            Protein Goal
+                          </label>
+                          <select
+                            value={metrics.proteinTarget}
+                            onChange={e => setMetrics({ ...metrics, proteinTarget: e.target.value })}
+                            className="w-full p-2.5 bg-[#FAF8F5] dark:bg-[#242D26] border border-stone-200 dark:border-stone-700 rounded-xl font-semibold"
+                          >
+                            <option value="~90–105 g/day">~90–105 g/day (Studio PDF Standard)</option>
+                            <option value="~80–90 g/day">~80–90 g/day</option>
+                            <option value="~110–125 g/day">~110–125 g/day</option>
+                            <option value="~130–145 g/day">~130–145 g/day</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-stone-500 mb-1">
+                            Dietary Constraints (Dropdown)
+                          </label>
+                          <select
+                            value={metrics.constraints}
+                            onChange={e => setMetrics({ ...metrics, constraints: e.target.value })}
+                            className="w-full p-2.5 bg-[#FAF8F5] dark:bg-[#242D26] border border-stone-200 dark:border-stone-700 rounded-xl font-semibold"
+                          >
+                            <option value="Egg-free + wheat-free">Egg-free + wheat-free (Studio PDF Standard)</option>
+                            <option value="Vegetarian">Vegetarian</option>
+                            <option value="Gluten-free & Dairy-free">Gluten-free &amp; Dairy-free</option>
+                            <option value="Lactose-sensitive">Lactose-sensitive</option>
+                            <option value="No constraints / Standard Non-Veg">No constraints / Standard Non-Veg</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-stone-500 mb-1">
+                            Sweetened Teas Allowance
+                          </label>
+                          <input
+                            type="text"
+                            value={metrics.teaSugarAllowance || '2 sweetened teas/day'}
+                            onChange={e => setMetrics({ ...metrics, teaSugarAllowance: e.target.value })}
+                            placeholder="e.g. 2 sweetened teas/day (~1 tsp sugar each)"
+                            className="w-full p-2.5 bg-[#FAF8F5] dark:bg-[#242D26] border border-stone-200 dark:border-stone-700 rounded-xl font-semibold"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* SUB-PANEL 3: RULES & HABITS */}
+              {dietSubPanel === 'habits' && (
+                <div className="space-y-4 animate-in fade-in duration-150">
+                  {/* Visual Habit Cards */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="p-4 rounded-3xl bg-white dark:bg-[#1C231E] border border-stone-200 dark:border-stone-800 flex items-center gap-3 shadow-ambient">
+                      <GentleWalkingPathDrawing className="w-11 h-11 text-emerald-800/70 dark:text-emerald-400/70 shrink-0" />
+                      <div>
+                        <span className="text-xs font-semibold text-emerald-800 dark:text-emerald-400">
+                          Daily Steps Target
+                        </span>
+                        <p className="font-serif font-bold text-base text-stone-900 dark:text-stone-100">
+                          {strategy.stepsTarget}
+                        </p>
+                        <p className="text-[11px] text-stone-400">Steady movement for active recovery</p>
+                      </div>
+                    </div>
+
+                    <div className="p-4 rounded-3xl bg-white dark:bg-[#1C231E] border border-stone-200 dark:border-stone-800 flex items-center gap-3 shadow-ambient">
+                      <WaterCarafeDrawing className="w-11 h-11 text-emerald-800/70 dark:text-emerald-400/70 shrink-0" />
+                      <div>
+                        <span className="text-xs font-semibold text-emerald-800 dark:text-emerald-400">
+                          Hydration Goal
+                        </span>
+                        <p className="font-serif font-bold text-base text-stone-900 dark:text-stone-100">
+                          2.5 – 3.0 Liters
+                        </p>
+                        <p className="text-[11px] text-stone-400">Essential for metabolism & digestion</p>
+                      </div>
+                    </div>
+
+                    <div className="p-4 rounded-3xl bg-white dark:bg-[#1C231E] border border-stone-200 dark:border-stone-800 flex items-center gap-3 shadow-ambient">
+                      <PeacefulMoonDrawing className="w-11 h-11 text-emerald-800/70 dark:text-emerald-400/70 shrink-0" />
+                      <div>
+                        <span className="text-xs font-semibold text-emerald-800 dark:text-emerald-400">
+                          Sleep &amp; Recovery
+                        </span>
+                        <p className="font-serif font-bold text-base text-stone-900 dark:text-stone-100">
+                          7.5+ Hours Nightly
+                        </p>
+                        <p className="text-[11px] text-stone-400">Deep muscular restoration</p>
+                      </div>
+                    </div>
+
+                    <div className="p-4 rounded-3xl bg-white dark:bg-[#1C231E] border border-stone-200 dark:border-stone-800 flex items-center gap-3 shadow-ambient">
+                      <BotanicalBranchDrawing className="w-11 h-11 text-emerald-800/70 dark:text-emerald-400/70 shrink-0" />
+                      <div>
+                        <span className="text-xs font-semibold text-emerald-800 dark:text-emerald-400">
+                          Oil Allowance
+                        </span>
+                        <p className="font-serif font-bold text-base text-stone-900 dark:text-stone-100">
+                          {strategy.oilAllowance}
+                        </p>
+                        <p className="text-[11px] text-stone-400">Pure olive or cold-pressed mustard oil</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white dark:bg-[#1C231E] p-5 rounded-3xl border border-stone-200 dark:border-stone-800 space-y-3">
+                    <h4 className="font-serif font-bold text-base flex items-center gap-2">
+                      <Shield className="w-5 h-5 text-amber-700 dark:text-amber-400" />
+                      <span>Studio Strategy &amp; Rules</span>
+                    </h4>
+
+                    <div>
+                      <label className="block text-xs font-bold text-stone-500 mb-1">
+                        Safety Boundary
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={strategy.safetyBoundary}
+                        onChange={e => setStrategy({ ...strategy, safetyBoundary: e.target.value })}
+                        className="w-full p-2.5 bg-[#FAF8F5] dark:bg-[#242D26] border border-stone-200 dark:border-stone-700 rounded-xl text-sm"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-stone-500 mb-1">
+                        Studio Rules (No cheat days, no alcohol, etc.)
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={strategy.specialRules}
+                        onChange={e => setStrategy({ ...strategy, specialRules: e.target.value })}
+                        className="w-full p-2.5 bg-[#FAF8F5] dark:bg-[#242D26] border border-stone-200 dark:border-stone-700 rounded-xl text-sm"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                      <div>
+                        <label className="block text-xs font-bold text-stone-500 mb-1">Steps Target</label>
+                        <input
+                          type="text"
+                          value={strategy.stepsTarget}
+                          onChange={e => setStrategy({ ...strategy, stepsTarget: e.target.value })}
+                          className="w-full p-2 bg-[#FAF8F5] dark:bg-[#242D26] border border-stone-200 dark:border-stone-700 rounded-xl"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-stone-500 mb-1">Cooking Oil</label>
+                        <input
+                          type="text"
+                          value={strategy.oilAllowance}
+                          onChange={e => setStrategy({ ...strategy, oilAllowance: e.target.value })}
+                          className="w-full p-2 bg-[#FAF8F5] dark:bg-[#242D26] border border-stone-200 dark:border-stone-700 rounded-xl"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Big Bottom Save Bar */}
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={handleSaveDietPlan}
+                  className="w-full py-4 px-4 rounded-2xl bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-base shadow-md flex items-center justify-center gap-2"
+                >
+                  <Save className="w-5 h-5" />
+                  <span>Save &amp; Assign Diet Plan</span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            /* Attendance & Timeslots Tab */
+            <div className="space-y-4 text-sm">
+              <div className="flex items-center justify-between bg-white dark:bg-[#1C231E] p-4 rounded-3xl border border-stone-200 dark:border-stone-800">
+                <div>
+                  <h4 className="font-serif font-bold text-base text-stone-900 dark:text-stone-100">
+                    Client Classes ({clientSessions.length})
+                  </h4>
+                  <p className="text-xs text-stone-500">Book new timeslots or mark check-ins</p>
+                </div>
+                <button
+                  onClick={() => setShowAddSlot(true)}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-xs shadow-xs"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Assign Class</span>
+                </button>
+              </div>
+
+              {clientSessions.length === 0 ? (
+                <div className="bg-white dark:bg-[#1C231E] rounded-3xl p-8 text-center space-y-3 border border-stone-200 dark:border-stone-800 shadow-ambient">
+                  <PilatesReformerDrawing className="w-28 h-20 mx-auto text-emerald-800/60 dark:text-emerald-400/60" />
+                  <h4 className="font-serif font-bold text-base text-stone-900 dark:text-stone-100">
+                    No Scheduled Sessions Yet
+                  </h4>
+                  <p className="text-xs text-stone-500">
+                    Tap "Assign Class" above to book this member into an upcoming Reformer or Tower session.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {clientSessions.map(slot => (
+                    <div
+                      key={slot.id}
+                      className="p-4 bg-white dark:bg-[#1C231E] rounded-3xl border border-stone-200 dark:border-stone-800 space-y-2 shadow-ambient"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                          <InstructorAlignmentDrawing className="w-10 h-10 text-emerald-800/50 dark:text-emerald-300/50 shrink-0" />
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-stone-900 dark:text-stone-100">{slot.date}</span>
+                              <span className="text-stone-300">•</span>
+                              <span className="text-emerald-800 dark:text-emerald-400 font-bold">{slot.time}</span>
+                              {slot.isRecurring && (
+                                <span className="text-xs bg-emerald-50 text-emerald-800 px-2.5 py-0.5 rounded-full font-semibold">
+                                  Recurring
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-sm font-bold text-stone-800 dark:text-stone-200 mt-1">{slot.sessionTitle}</p>
+                            <p className="text-xs text-stone-500 font-medium">RC Pilates Studio</p>
+                          </div>
+                        </div>
+
+                        <div>
+                          {slot.status === 'present' && (
+                            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-900">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>Present</span>
+                            </span>
+                          )}
+                          {slot.status === 'absent' && (
+                            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800">
+                              <XCircle className="w-3.5 h-3.5" />
+                              <span>Absent</span>
+                            </span>
+                          )}
+                          {slot.status === 'scheduled' && (
+                            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800">
+                              <Clock className="w-3.5 h-3.5" />
+                              <span>Scheduled</span>
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-end gap-2 pt-2 border-t border-stone-100 dark:border-stone-800">
+                        <button
+                          type="button"
+                          onClick={() => updateAttendance(slot.id, 'present')}
+                          className="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-900 text-xs font-bold"
+                        >
+                          Mark Present
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => updateAttendance(slot.id, 'absent')}
+                          className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-800 text-xs font-bold"
+                        >
+                          Mark Absent
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Add Multi-Day Alarm-Style Schedule Inside */}
+              {showAddSlot && (
+                <div className="bg-white dark:bg-[#1C231E] p-5 rounded-3xl border border-stone-200 dark:border-stone-800 space-y-4 shadow-ambient animate-in fade-in">
+                  <div className="border-b border-stone-100 dark:border-stone-800 pb-2">
+                    <h5 className="font-serif font-bold text-lg text-stone-900 dark:text-stone-100">
+                      Schedule Classes for {client.displayName}
+                    </h5>
+                    <p className="text-xs text-stone-500 font-medium">
+                      Select days of the week, class time, and repeat duration
+                    </p>
+                  </div>
+
+                  <form onSubmit={handleAssignSlot} className="space-y-4 text-xs">
+                    <div>
+                      <label className="block font-bold text-stone-700 dark:text-stone-300 mb-1">
+                        Session Title
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={newSlotTitle}
+                        onChange={e => setNewSlotTitle(e.target.value)}
+                        placeholder="e.g. Pilates Session"
+                        className="w-full p-2.5 bg-[#FAF8F5] dark:bg-[#242D26] border border-stone-200 dark:border-stone-700 rounded-xl font-semibold text-stone-900 dark:text-stone-100"
+                      />
+                    </div>
+
+                    {/* Circular Day-of-Week Picker (Alarm app style) */}
+                    <div>
+                      <label className="block font-bold text-stone-700 dark:text-stone-300 mb-1.5">
+                        Repeat on Days
+                      </label>
+                      <DayOfWeekPicker
+                        selectedDays={selectedDays}
+                        onChange={setSelectedDays}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                      <div>
+                        <label className="block font-bold text-stone-700 dark:text-stone-300 mb-1">
+                          Starting Date
+                        </label>
+                        <input
+                          type="date"
+                          required
+                          value={newSlotDate}
+                          onChange={e => {
+                            const val = e.target.value;
+                            setNewSlotDate(val);
+                            updateDatesFromDuration(newSlotRepeatWeeks, val);
+                          }}
+                          className="w-full p-2.5 bg-[#FAF8F5] dark:bg-[#242D26] border border-stone-200 dark:border-stone-700 rounded-xl font-medium text-stone-900 dark:text-stone-100"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block font-bold text-stone-700 dark:text-stone-300 mb-1">
+                          Ending Date
+                        </label>
+                        <input
+                          type="date"
+                          required
+                          value={newSlotEndDate}
+                          min={newSlotDate}
+                          onChange={e => setNewSlotEndDate(e.target.value)}
+                          className="w-full p-2.5 bg-[#FAF8F5] dark:bg-[#242D26] border border-stone-200 dark:border-stone-700 rounded-xl font-medium text-stone-900 dark:text-stone-100"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block font-bold text-stone-700 dark:text-stone-300 mb-1">
+                          Quick Duration Preset
+                        </label>
+                        <select
+                          value={newSlotRepeatWeeks}
+                          onChange={e => updateDatesFromDuration(Number(e.target.value))}
+                          className="w-full p-2.5 bg-[#FAF8F5] dark:bg-[#242D26] border border-stone-200 dark:border-stone-700 rounded-xl font-semibold text-stone-900 dark:text-stone-100"
+                        >
+                          <option value={1}>1 Week Only</option>
+                          <option value={2}>2 Weeks</option>
+                          <option value={4}>4 Weeks (1 Month)</option>
+                          <option value={6}>6 Weeks</option>
+                          <option value={8}>8 Weeks (2 Months)</option>
+                          <option value={12}>12 Weeks (3 Months)</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <StudioTimeslotSelect
+                          value={newSlotTime}
+                          onChange={setNewSlotTime}
+                          isInstructor={true}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="pt-2 flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowAddSlot(false)}
+                        className="flex-1 py-3 rounded-2xl bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 font-bold hover:bg-stone-200 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="flex-1 py-3 rounded-2xl bg-emerald-800 text-white font-bold shadow-md hover:bg-emerald-900 transition-colors"
+                      >
+                        Confirm &amp; Schedule
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};

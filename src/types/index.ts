@@ -1,0 +1,131 @@
+export type UserRole = 'instructor' | 'client';
+
+export type AttendanceStatus = 'present' | 'absent' | 'late' | 'scheduled' | 'excused' | 'reschedule_requested';
+
+export type AppTheme = 'system' | 'light' | 'dark';
+
+export interface RescheduleRequest {
+  requestedDate: string;
+  requestedTime: string;
+  clientReason?: string;
+  requestedAt: string;
+  status: 'pending' | 'approved' | 'declined';
+}
+
+export interface DietProfileMetrics {
+  ageSex: string; // e.g. "52 / Female"
+  heightWeight: string; // e.g. "5'7\" / 80 kg"
+  targetWeight: string; // e.g. "Goal 72 kg"
+  estimatedBMI: string; // e.g. "27.6"
+  estimatedMaintenance: string; // e.g. "~1,900–2,000 kcal/day"
+  dailyIntake: string; // e.g. "~1,600 kcal/day"
+  dailyIntakeNote?: string; // e.g. "NOT a 1,600-kcal deficit"
+  proteinTarget: string; // e.g. "~90–105 g/day"
+  fibreTarget: string; // e.g. "~25–30 g/day"
+  constraints: string; // e.g. "Egg-free + wheat-free"
+  teaSugarAllowance?: string; // e.g. "2 sweetened teas/day"
+  activity: string; // e.g. "Pilates ~5–6 pm + walking"
+}
+
+export interface DietMealSlot {
+  id: string;
+  time: string; // e.g. "8:00 AM"
+  mealName: string; // e.g. "Breakfast", "Tea 1", "Lunch", "Tea 2 + snack", "Dinner"
+  foodDescription: string; // e.g. "2 moong-dal chillas from ~70 g dry dal + 100 g curd + vegetables"
+  caloriesKcal: number; // e.g. 390
+}
+
+export interface DietDayPlan {
+  dayNumber: number; // 1 to 7
+  dayLabel: string; // "Day 1", "Day 2", etc.
+  focusTag?: string; // e.g. "Moong Dal Chilla & High Protein"
+  totalCalories: number; // e.g. 1580
+  meals: DietMealSlot[];
+}
+
+export interface DietStrategyRules {
+  safetyBoundary: string;
+  specialRules: string;
+  stepsTarget: string;
+  pilatesTarget: string;
+  waterTarget: string;
+  oilAllowance: string;
+  fruitAllowance: string;
+  saltGuideline: string;
+  sleepTarget: string;
+  trackingGuideline: string;
+  medicalDisclaimer: string;
+}
+
+export interface StudioDietPlan {
+  id: string;
+  planTitle: string; // e.g. "SHORT-TERM MAXIMUM-SAFE FAT-LOSS PLAN"
+  clientName: string;
+  assignedDate: string;
+  status: 'active' | 'archived';
+  metrics: DietProfileMetrics;
+  strategy: DietStrategyRules;
+  days: DietDayPlan[];
+  currentWaterLiters: number;
+  instructorNotes: string;
+}
+
+export interface SessionTimeslot {
+  id: string;
+  sessionTitle: string;
+  date: string; // YYYY-MM-DD
+  time: string; // e.g. "08:30 AM - 09:25 AM"
+  room?: string;
+  apparatus?: string;
+  instructorName: string;
+  instructorId: string;
+  clientId: string;
+  clientName: string;
+  status: AttendanceStatus;
+  markedAt?: string;
+  notes?: string;
+  rescheduleRequest?: RescheduleRequest;
+  clientConfirmation?: 'attending' | 'not_attending';
+  clientConfirmedAt?: string;
+  isRecurring?: boolean;
+  recurringPattern?: string;
+  recurringGroupId?: string;
+}
+
+export interface ClientFeeRecord {
+  clientId: string;
+  status: 'paid' | 'pending';
+  amount: string; // e.g. "₹12,000"
+  packageTitle: string; // e.g. "Reformer Unlimited"
+  dueDate: string; // e.g. "Nov 10, 2026"
+  lastPaidDate?: string; // e.g. "Oct 10, 2026"
+  lastReminderSent?: string; // e.g. "Today, 10:30 AM"
+  notes?: string;
+}
+
+export interface StudioBatchSlot {
+  id: string;
+  timeSlot: string; // e.g. "08:00 AM - 09:00 AM"
+  category: 'morning' | 'evening';
+  isAvailable: boolean;
+  label?: string; // e.g. "Early Morning Flow"
+}
+
+export interface UserProfile {
+  id: string;
+  email: string;
+  username: string;
+  displayName: string;
+  role: UserRole;
+  avatarUrl: string;
+  phone?: string;
+  membershipTier?: 'Reformer Unlimited' | 'Private Duet' | 'Mindful Core 8-Pack' | 'Senior Master Instructor' | 'Founder & Master Instructor' | string;
+  bio?: string;
+  dietPlan?: StudioDietPlan;
+  feeRecord?: ClientFeeRecord;
+  joinedDate: string;
+  fitnessGoal?: string;
+  experienceLevel?: string;
+  dietaryPreference?: string;
+  isOnboarded?: boolean;
+}
