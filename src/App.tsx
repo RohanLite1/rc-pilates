@@ -149,7 +149,7 @@ const MainAppContent: React.FC = () => {
   };
 
   return (
-    <div className="w-full min-h-screen bg-[#FAF8F5] dark:bg-[#131814] text-stone-900 dark:text-[#EDF3EC] flex flex-col relative select-none transition-colors duration-200">
+    <div className="w-full min-h-screen bg-[#F9F6F0] text-[#2D251E] flex flex-col relative select-none transition-colors duration-200">
       {/* Top Header with studio brand and quick persona switcher */}
       <Header />
 

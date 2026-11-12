@@ -38,23 +38,23 @@ export const ClientOnboardingModal: React.FC = () => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="bg-[#FAF8F5] dark:bg-[#1A221C] text-stone-900 dark:text-[#EDF3EC] rounded-3xl w-full max-w-md shadow-2xl border border-stone-200 dark:border-stone-800 overflow-hidden flex flex-col max-h-[90vh]">
-        {/* Modal Header */}
-        <div className="p-5 bg-gradient-to-br from-emerald-950 via-stone-900 to-emerald-900 text-white relative overflow-hidden shrink-0">
+        {/* Modal Header - Light Oat Milk & Warm Sand */}
+        <div className="p-5 bg-gradient-to-br from-[#FAF6F0] via-[#F4EFEA] to-[#EAE0D2] text-[#2D251E] border-b border-[#D5C0A4] relative overflow-hidden shrink-0">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-white/10 text-emerald-300">
+            <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#FAF6F0] text-[#675137] border border-[#D5C0A4]">
               New Member Setup • Step {step} of 3
             </span>
-            <span className="text-xs text-stone-300 font-medium">RC Pilates Studio</span>
+            <span className="text-xs text-[#786B5D] font-medium">RC Pilates Studio</span>
           </div>
 
-          <h2 className="font-serif text-2xl font-bold tracking-tight text-white leading-tight">
+          <h2 className="font-serif text-2xl font-bold tracking-tight text-[#2D251E] leading-tight">
             Welcome to RC Pilates
           </h2>
-          <p className="text-xs text-stone-300 font-light mt-1">
+          <p className="text-xs text-[#786B5D] font-medium mt-1">
             Let's tailor your studio experience with instructor Radhika Chopra.
           </p>
 
-          <PilatesReformerDrawing className="w-24 h-16 text-emerald-300/15 absolute -right-2 -bottom-2 pointer-events-none" />
+          <PilatesReformerDrawing className="w-24 h-16 text-[#7B6244]/20 absolute -right-2 -bottom-2 pointer-events-none" />
         </div>
 
         {/* Step Content */}

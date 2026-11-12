@@ -72,24 +72,27 @@ export const ClientDashboard: React.FC = () => {
 
   return (
     <div className="flex-1 p-4 pb-28 space-y-4 max-w-xl mx-auto w-full">
-      {/* Studio Greeting Header */}
-      <div className="rounded-3xl p-5 bg-gradient-to-br from-emerald-950 via-stone-900 to-emerald-900 text-white shadow-ambient relative overflow-hidden">
+      {/* Studio Greeting Header - Light Oat Milk & Warm Sand */}
+      <div className="rounded-3xl p-5 bg-gradient-to-br from-[#FAF6F0] via-[#F4EFEA] to-[#EAE0D2] text-[#2D251E] shadow-ambient border border-[#D5C0A4] relative overflow-hidden">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-semibold text-emerald-300 flex items-center gap-1.5">
-            <Sparkles className="w-4 h-4" />
+          <span className="text-xs font-semibold text-[#675137] flex items-center gap-1.5 bg-[#FAF6F0] px-2.5 py-1 rounded-full border border-[#D5C0A4]/80 shadow-xs">
+            <Sparkles className="w-3.5 h-3.5 text-[#7B6244]" />
             <span>RC Pilates &amp; Fitness</span>
           </span>
-          <span className="text-xs bg-white/10 px-3 py-1 rounded-full text-stone-200">
+          <span className="text-xs bg-[#FAF6F0] px-3 py-1 rounded-full text-[#675137] font-bold border border-[#D5C0A4]/80 shadow-xs">
             {currentUser.membershipTier || 'Member'}
           </span>
         </div>
 
-        <h2 className="font-serif text-3xl font-bold tracking-tight text-white leading-tight">
+        <h2 className="font-serif text-3xl font-bold tracking-tight text-[#2D251E] leading-tight">
           Hi, {currentUser.displayName.split(' ')[0]}
         </h2>
-        <p className="text-sm text-stone-300 mt-1 font-light">
+        <p className="text-sm text-[#786B5D] mt-1 font-medium">
           Your scheduled pilates timeslots &amp; attendance check-in.
         </p>
+
+        {/* Studio Drawing Accent */}
+        <PilatesPoseDrawing className="w-24 h-24 text-[#7B6244]/15 absolute -right-2 -bottom-2 pointer-events-none" />
       </div>
 
       {/* Membership & Fee Status Banner */}

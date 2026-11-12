@@ -161,41 +161,41 @@ export const InstructorDashboard: React.FC<InstructorDashboardProps> = ({ onOpen
             </span>
           </div>
 
-          {/* Dedicated Morning Header Banner (Calmer Warm Linen & Sand) */}
-          <div className="rounded-3xl p-5 bg-gradient-to-br from-[#2D2319] via-[#211A13] to-[#19130E] dark:from-[#241C14] dark:via-[#1B150F] dark:to-[#140F0A] text-[#FAF5EC] shadow-ambient relative overflow-hidden border border-[#523E2A]/30">
+          {/* Dedicated Morning Header Banner - Light Oat Milk & Warm Sand */}
+          <div className="rounded-3xl p-5 bg-gradient-to-br from-[#FAF6F0] via-[#F4EFEA] to-[#EAE0D2] text-[#2D251E] shadow-ambient relative overflow-hidden border border-[#D5C0A4]">
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs text-amber-300 font-semibold flex items-center gap-1.5">
-                <Sun className="w-4 h-4 text-amber-400" />
+              <span className="text-xs text-[#7B6244] font-semibold flex items-center gap-1.5 bg-[#FAF6F0] px-2.5 py-0.5 rounded-full border border-[#D5C0A4]">
+                <Sun className="w-4 h-4 text-amber-600" />
                 <span>Morning Batches</span>
               </span>
-              <span className="text-xs bg-white/10 px-2.5 py-0.5 rounded-full text-stone-200 font-semibold">
+              <span className="text-xs bg-[#FAF6F0] px-2.5 py-0.5 rounded-full text-[#675137] font-bold border border-[#D5C0A4]">
                 {morningBatches.length} Slots
               </span>
             </div>
-            <h3 className="font-serif font-bold text-2xl text-white">
+            <h3 className="font-serif font-bold text-2xl text-[#2D251E]">
               Morning Attendance
             </h3>
-            <p className="text-xs text-stone-300 font-light mt-0.5">
+            <p className="text-xs text-[#786B5D] font-medium mt-0.5">
               Check in members scheduled between 7:00 AM and 12:00 PM.
             </p>
 
             {/* Quick Morning Metrics */}
-            <div className="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-white/10 text-center">
-              <div className="bg-white/5 backdrop-blur-md rounded-2xl p-2 border border-white/5">
-                <p className="text-lg font-serif font-bold text-emerald-300">{morningPresentCount}</p>
-                <p className="text-xs text-emerald-200/90 font-medium">Present</p>
+            <div className="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-[#D5C0A4]/70 text-center">
+              <div className="bg-white/80 rounded-2xl p-2 border border-[#E2D5C3]">
+                <p className="text-lg font-serif font-bold text-emerald-800">{morningPresentCount}</p>
+                <p className="text-xs text-emerald-900 font-medium">Present</p>
               </div>
-              <div className="bg-white/5 backdrop-blur-md rounded-2xl p-2 border border-white/5">
-                <p className="text-lg font-serif font-bold text-amber-300">{morningScheduledCount}</p>
-                <p className="text-xs text-amber-200/90 font-medium">Scheduled</p>
+              <div className="bg-white/80 rounded-2xl p-2 border border-[#E2D5C3]">
+                <p className="text-lg font-serif font-bold text-amber-800">{morningScheduledCount}</p>
+                <p className="text-xs text-amber-900 font-medium">Scheduled</p>
               </div>
-              <div className="bg-white/5 backdrop-blur-md rounded-2xl p-2 border border-white/5">
-                <p className="text-lg font-serif font-bold text-rose-300">{morningAbsentCount}</p>
-                <p className="text-xs text-rose-200/90 font-medium">Absent</p>
+              <div className="bg-white/80 rounded-2xl p-2 border border-[#E2D5C3]">
+                <p className="text-lg font-serif font-bold text-stone-700">{morningAbsentCount}</p>
+                <p className="text-xs text-stone-600 font-medium">Absent</p>
               </div>
             </div>
 
-            <MorningSunDrawing className="w-28 h-16 text-amber-200/15 absolute -right-2 -bottom-2 pointer-events-none" />
+            <MorningSunDrawing className="w-28 h-16 text-[#7B6244]/15 absolute -right-2 -bottom-2 pointer-events-none" />
           </div>
 
           {/* Morning Slots List */}
@@ -389,41 +389,41 @@ export const InstructorDashboard: React.FC<InstructorDashboardProps> = ({ onOpen
             </span>
           </div>
 
-          {/* Dedicated Evening Header Banner (Warm Twilight Sand & Oat) */}
-          <div className="rounded-3xl p-5 bg-gradient-to-br from-[#29221B] via-[#201A14] to-[#17120E] dark:from-[#211A14] dark:via-[#19140F] dark:to-[#110D0A] text-[#F7F3ED] shadow-ambient relative overflow-hidden border border-[#52402B]/40">
+          {/* Dedicated Evening Header Banner - Light Oat Milk & Warm Sand */}
+          <div className="rounded-3xl p-5 bg-gradient-to-br from-[#FAF6F0] via-[#F4EFEA] to-[#EAE0D2] text-[#2D251E] shadow-ambient relative overflow-hidden border border-[#D5C0A4]">
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs text-[#E6D7C3] font-semibold flex items-center gap-1.5">
-                <Moon className="w-4 h-4 text-[#D5C0A4]" />
+              <span className="text-xs text-[#7B6244] font-semibold flex items-center gap-1.5 bg-[#FAF6F0] px-2.5 py-0.5 rounded-full border border-[#D5C0A4]">
+                <Moon className="w-4 h-4 text-[#7B6244]" />
                 <span>Evening Batches</span>
               </span>
-              <span className="text-xs bg-white/10 px-2.5 py-0.5 rounded-full text-stone-200 font-semibold">
+              <span className="text-xs bg-[#FAF6F0] px-2.5 py-0.5 rounded-full text-[#675137] font-bold border border-[#D5C0A4]">
                 {eveningBatches.length} Slots
               </span>
             </div>
-            <h3 className="font-serif font-bold text-2xl text-white">
+            <h3 className="font-serif font-bold text-2xl text-[#2D251E]">
               Evening Attendance
             </h3>
-            <p className="text-xs text-stone-300 font-light mt-0.5">
+            <p className="text-xs text-[#786B5D] font-medium mt-0.5">
               Check in members scheduled between 4:00 PM and 12:00 AM.
             </p>
 
             {/* Quick Evening Metrics */}
-            <div className="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-white/10 text-center">
-              <div className="bg-white/5 backdrop-blur-md rounded-2xl p-2 border border-white/5">
-                <p className="text-lg font-serif font-bold text-[#D5C0A4]">{eveningPresentCount}</p>
-                <p className="text-xs text-[#E6D7C3]/90 font-medium">Present</p>
+            <div className="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-[#D5C0A4]/70 text-center">
+              <div className="bg-white/80 rounded-2xl p-2 border border-[#E2D5C3]">
+                <p className="text-lg font-serif font-bold text-emerald-800">{eveningPresentCount}</p>
+                <p className="text-xs text-emerald-900 font-medium">Present</p>
               </div>
-              <div className="bg-white/5 backdrop-blur-md rounded-2xl p-2 border border-white/5">
-                <p className="text-lg font-serif font-bold text-amber-300">{eveningScheduledCount}</p>
-                <p className="text-xs text-amber-200/90 font-medium">Scheduled</p>
+              <div className="bg-white/80 rounded-2xl p-2 border border-[#E2D5C3]">
+                <p className="text-lg font-serif font-bold text-amber-800">{eveningScheduledCount}</p>
+                <p className="text-xs text-amber-900 font-medium">Scheduled</p>
               </div>
-              <div className="bg-white/5 backdrop-blur-md rounded-2xl p-2 border border-white/5">
-                <p className="text-lg font-serif font-bold text-rose-300">{eveningAbsentCount}</p>
-                <p className="text-xs text-rose-200/90 font-medium">Absent</p>
+              <div className="bg-white/80 rounded-2xl p-2 border border-[#E2D5C3]">
+                <p className="text-lg font-serif font-bold text-stone-700">{eveningAbsentCount}</p>
+                <p className="text-xs text-stone-600 font-medium">Absent</p>
               </div>
             </div>
 
-            <PeacefulMoonDrawing className="w-28 h-16 text-[#E6D7C3]/15 absolute -right-2 -bottom-2 pointer-events-none" />
+            <PeacefulMoonDrawing className="w-28 h-16 text-[#7B6244]/15 absolute -right-2 -bottom-2 pointer-events-none" />
           </div>
 
           {/* Evening Slots List */}
