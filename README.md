@@ -2,6 +2,17 @@
 
 Mindful movement, contemporary reformer management, and client scheduling application.
 
+## Release 0.1
+
+This initial release introduces the core studio operations and member management workflows:
+- Morning and Evening batch categorization with slot availability controls.
+- Daily attendance logging with Present, Absent, and Scheduled statuses.
+- Automated 45-minute class reminders with Attending and Not attending confirmation actions.
+- Client roster with fee payment tracking and reminder notifications.
+- Role-based Google authentication with instructor whitelisting.
+- Serene design aesthetic with fluid navigation animations and gesture-based drawer controls.
+- Cross-platform delivery via Progressive Web App (PWA) and Capacitor Android build.
+
 ## Overview
 
 RC Pilates & Fitness Studio is a digital studio management platform designed for both lead instructors and studio members. The system centralizes class attendance, batch-level time scheduling, client rosters, fee tracking, and automated reminder notifications.
