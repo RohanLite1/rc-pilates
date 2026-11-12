@@ -157,7 +157,7 @@ export async function triggerDemoNotification(
   const body =
     type === 'class-reminder'
       ? 'Your Reformer Alignment with Radhika starts at 08:00 AM. Are you attending?'
-      : 'Friendly reminder: Your monthly fee of ₹12,000 for Reformer Unlimited is due tomorrow. Thank you!';
+      : 'Friendly reminder: Your studio membership renewal for Reformer Unlimited is due tomorrow. Thank you!';
 
   const notificationId = type === 'class-reminder' ? 901 : 902;
   const triggerTime = new Date(Date.now() + delaySeconds * 1000);
@@ -193,19 +193,40 @@ export async function triggerDemoNotification(
     }
   }
 
-  // Web Browser fallback
+  // Web Browser / iOS PWA Fallback: trigger both system notification and interactive in-app banner
   setTimeout(() => {
+    // 1. Native browser notification
     if ('Notification' in window && Notification.permission === 'granted') {
-      new Notification(title, {
-        body,
-        icon: '/pwa-icon-192.png'
-      });
+      try {
+        new Notification(title, {
+          body,
+          icon: '/pwa-icon-192.png'
+        });
+      } catch (e) {
+        console.warn('Native notification failed:', e);
+      }
+    }
+
+    // 2. Dispatch in-app interactive notification banner with "Attending" & "Not attending" buttons
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('rc-in-app-notification', {
+          detail: {
+            title,
+            body,
+            type,
+            sessionId: 'slot-2',
+            instructorName: 'Radhika Chopra',
+            time: '08:00 AM'
+          }
+        })
+      );
     }
   }, delaySeconds * 1000);
 
   return {
     success: true,
-    message: `Notification scheduled! Watch your screen in ${delaySeconds} seconds.`
+    message: `Alert arriving in ${delaySeconds} seconds with interactive "Attending" & "Not attending" buttons!`
   };
 }
 
@@ -309,7 +330,7 @@ export async function scheduleFeeReminder1DayBefore(
           {
             id: idHash,
             title: '💳 RC Pilates • Membership Fee Due Tomorrow',
-            body: `Your studio fee of ${client.feeRecord.amount} for ${client.feeRecord.packageTitle} is due tomorrow (${client.feeRecord.dueDate}).`,
+            body: `Your studio membership for ${client.feeRecord.packageTitle} is due tomorrow (${client.feeRecord.dueDate}).`,
             schedule: { at: triggerTime, allowWhileIdle: true },
             channelId: CHANNEL_ID,
             smallIcon: 'ic_launcher'

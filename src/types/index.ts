@@ -111,6 +111,14 @@ export interface StudioBatchSlot {
   label?: string; // e.g. "Early Morning Flow"
 }
 
+export interface ImportedDietPdf {
+  fileName: string;
+  fileSize: string;
+  uploadedAt: string;
+  notes?: string;
+  fileUrl?: string;
+}
+
 export interface UserProfile {
   id: string;
   email: string;
@@ -119,9 +127,14 @@ export interface UserProfile {
   role: UserRole;
   avatarUrl: string;
   phone?: string;
+  height?: string;
+  weight?: string;
+  age?: string;
+  gender?: string;
   membershipTier?: 'Reformer Unlimited' | 'Private Duet' | 'Mindful Core 8-Pack' | 'Senior Master Instructor' | 'Founder & Master Instructor' | string;
   bio?: string;
   dietPlan?: StudioDietPlan;
+  importedDietPdf?: ImportedDietPdf;
   feeRecord?: ClientFeeRecord;
   joinedDate: string;
   fitnessGoal?: string;

@@ -419,8 +419,8 @@ export const AppDrawer: React.FC = () => {
                     <Settings className="w-4 h-4" />
                   </div>
                   <div>
-                    <p className="font-bold text-sm">Settings &amp; Theme</p>
-                    <p className="text-[11px] opacity-80 font-normal">Dark mode &amp; preferences</p>
+                    <p className="font-bold text-sm">Studio Settings</p>
+                    <p className="text-[11px] opacity-80 font-normal">Profile &amp; studio preferences</p>
                   </div>
                 </div>
                 <ChevronRight className="w-4 h-4 opacity-50" />
@@ -526,8 +526,8 @@ export const AppDrawer: React.FC = () => {
                     <Settings className="w-4 h-4" />
                   </div>
                   <div>
-                    <p className="font-bold text-sm">Membership &amp; Settings</p>
-                    <p className="text-[11px] opacity-80 font-normal">Fee status &amp; theme</p>
+                    <p className="font-bold text-sm">Membership &amp; Profile</p>
+                    <p className="text-[11px] opacity-80 font-normal">Fee status &amp; physical metrics</p>
                   </div>
                 </div>
                 <ChevronRight className="w-4 h-4 opacity-50" />

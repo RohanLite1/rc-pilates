@@ -13,6 +13,8 @@ import { InstructorClientsView } from './components/instructor/InstructorClients
 import { InstructorScheduleView } from './components/instructor/InstructorScheduleView';
 import { ClientDossierModal } from './components/instructor/ClientDossierModal';
 import { ProfileView } from './components/common/ProfileView';
+import { StartupAnimation } from './components/common/StartupAnimation';
+import { InAppNotificationBanner } from './components/common/InAppNotificationBanner';
 import type { UserProfile } from './types';
 import { initializeNotificationChannels, requestNotificationPermission } from './services/notificationService';
 import { App as CapApp } from '@capacitor/app';
@@ -204,6 +206,8 @@ const MainAppContent: React.FC = () => {
 export default function App() {
   return (
     <AppProvider>
+      <StartupAnimation />
+      <InAppNotificationBanner />
       <MainAppContent />
     </AppProvider>
   );

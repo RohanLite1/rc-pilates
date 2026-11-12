@@ -71,10 +71,20 @@ interface AppContextType {
   // Auth
   loginWithGoogle: (email: string, name?: string) => void;
   loginWithCredentials: (usernameOrEmail: string, password: string) => { success: boolean; error?: string };
-  registerUser: (name: string, email: string, username: string, role: 'instructor' | 'client') => void;
+  registerUser: (
+    name: string,
+    email: string,
+    username: string,
+    role: 'instructor' | 'client',
+    extraData?: Partial<UserProfile>
+  ) => void;
   completeClientOnboarding: (data: {
     displayName?: string;
     phone?: string;
+    height?: string;
+    weight?: string;
+    age?: string;
+    gender?: string;
     fitnessGoal?: string;
     experienceLevel?: string;
     dietaryPreference?: string;
@@ -90,6 +100,7 @@ interface AppContextType {
   requestReschedule: (sessionId: string, newDate: string, newTime: string, reason?: string) => void;
   respondToReschedule: (sessionId: string, approve: boolean) => void;
   updateClientDietPlan: (clientId: string, diet: StudioDietPlan) => void;
+  importDietPlanPdf: (clientId: string, pdfData: { fileName: string; fileSize: string; uploadedAt: string; notes?: string; fileUrl?: string }) => void;
   addWaterLog: (clientId: string, amountLiters: number) => void;
   refreshState: () => void;
 }
@@ -244,58 +255,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return null;
   });
 
-  // Theme: 'system' | 'light' | 'dark'
-  const [theme, setThemeState] = useState<AppTheme>(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY_THEME);
-      if (stored === 'light' || stored === 'dark' || stored === 'system') {
-        return stored as AppTheme;
-      }
-    } catch (e) {
-      console.error(e);
-    }
-    return 'system';
-  });
-
-  const setTheme = (newTheme: AppTheme) => {
-    setThemeState(newTheme);
-    try {
-      localStorage.setItem(STORAGE_KEY_THEME, newTheme);
-    } catch (e) {
-      console.error(e);
-    }
+  // Theme: Strict Light Mode per client requirements (Oat Milk & Warm Sand)
+  const theme: AppTheme = 'light';
+  const setTheme = (_newTheme: AppTheme) => {
+    // Permanent light mode
   };
 
-  // Sync theme with system preference and apply .dark class to root
+  // Enforce light mode on root element and remove dark classes
   useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-
-    const applyTheme = () => {
-      const isDark = theme === 'dark' || (theme === 'system' && mediaQuery.matches);
-      if (isDark) {
-        document.documentElement.classList.add('dark');
-        document.documentElement.style.colorScheme = 'dark';
-        const metaThemeColor = document.getElementById('theme-color-meta');
-        if (metaThemeColor) metaThemeColor.setAttribute('content', '#1C1916');
-      } else {
-        document.documentElement.classList.remove('dark');
-        document.documentElement.style.colorScheme = 'light';
-        const metaThemeColor = document.getElementById('theme-color-meta');
-        if (metaThemeColor) metaThemeColor.setAttribute('content', '#F9F6F0');
-      }
-    };
-
-    applyTheme();
-
-    const handleSystemChange = () => {
-      if (theme === 'system') {
-        applyTheme();
-      }
-    };
-
-    mediaQuery.addEventListener('change', handleSystemChange);
-    return () => mediaQuery.removeEventListener('change', handleSystemChange);
-  }, [theme]);
+    document.documentElement.classList.remove('dark');
+    document.documentElement.style.colorScheme = 'light';
+    const metaThemeColor = document.getElementById('theme-color-meta');
+    if (metaThemeColor) metaThemeColor.setAttribute('content', '#F9F6F0');
+    try {
+      localStorage.removeItem(STORAGE_KEY_THEME);
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
 
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [isDeviceFrame, setIsDeviceFrame] = useState<boolean>(false);
@@ -483,22 +460,43 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   };
 
-  const registerUser = (name: string, email: string, username: string, role: 'instructor' | 'client') => {
+  const registerUser = (
+    name: string,
+    email: string,
+    username: string,
+    role: 'instructor' | 'client',
+    extraData?: Partial<UserProfile>
+  ) => {
     const newUser: UserProfile = {
       id: `${role}-${Date.now()}`,
       displayName: name,
       email,
       username,
       role,
-      avatarUrl: `https://api.dicebear.com/7.x/notionists/svg?seed=${username}&backgroundColor=eaf0e9`,
+      avatarUrl: `https://api.dicebear.com/7.x/notionists/svg?seed=${username}&backgroundColor=f4ece1`,
       membershipTier: role === 'instructor' ? 'Senior Master Instructor' : 'Reformer Unlimited',
       joinedDate: 'Today',
       bio: role === 'instructor' ? 'RC Pilates & Fitness Studio instructor.' : 'Passionate RC Pilates studio member.',
+      height: extraData?.height || '165 cm',
+      weight: extraData?.weight || '60 kg',
+      age: extraData?.age || '28',
+      gender: extraData?.gender || 'Female',
+      phone: extraData?.phone,
+      fitnessGoal: extraData?.fitnessGoal || 'Core Strength & Posture',
+      experienceLevel: extraData?.experienceLevel || 'Beginner',
+      dietaryPreference: extraData?.dietaryPreference || 'Vegetarian',
+      isOnboarded: true,
       dietPlan: {
         ...DEFAULT_STUDIO_DIET_PLAN,
         id: `diet-${Date.now()}`,
-        clientName: name
-      }
+        clientName: name,
+        metrics: {
+          ...DEFAULT_STUDIO_DIET_PLAN.metrics,
+          heightWeight: `${extraData?.height || '165 cm'} / ${extraData?.weight || '60 kg'}`,
+          ageSex: `${extraData?.age || '28'} / ${extraData?.gender || 'Female'}`
+        }
+      },
+      ...extraData
     };
 
     if (role === 'client') {
@@ -764,6 +762,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  // Import Studio Diet Plan from PDF
+  const importDietPlanPdf = (
+    clientId: string,
+    pdfData: { fileName: string; fileSize: string; uploadedAt: string; notes?: string; fileUrl?: string }
+  ) => {
+    setClients(prev =>
+      prev.map(c => {
+        if (c.id === clientId) {
+          return {
+            ...c,
+            importedDietPdf: pdfData
+          };
+        }
+        return c;
+      })
+    );
+    if (currentUser && currentUser.id === clientId) {
+      setCurrentUser(prev => (prev ? { ...prev, importedDietPdf: pdfData } : null));
+    }
+    if (selectedClient && selectedClient.id === clientId) {
+      setSelectedClient(prev => (prev ? { ...prev, importedDietPdf: pdfData } : null));
+    }
+  };
+
   // Fee Management Actions
   const updateClientFeeStatus = (
     clientId: string,
@@ -847,7 +869,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setStudioTimeslots(AVAILABLE_STUDIO_TIMESLOTS);
     setCurrentUser(INITIAL_INSTRUCTOR);
     setSelectedClient(INITIAL_CLIENTS[0]);
-    setThemeState('system');
   };
 
   return (
@@ -891,6 +912,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         requestReschedule,
         respondToReschedule,
         updateClientDietPlan,
+        importDietPlanPdf,
         addWaterLog,
         refreshState
       }}

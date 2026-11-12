@@ -9,12 +9,14 @@ import {
   Shield,
   AlertCircle,
   Sliders,
-  Apple
+  Apple,
+  UserPlus
 } from 'lucide-react';
 import { PilatesReformerDrawing } from '../common/StudioDrawings';
+import { SignUpWizardModal } from './SignUpWizardModal';
 
 export const LoginModal: React.FC = () => {
-  const { loginWithGoogle, loginWithCredentials, registerUser } = useApp();
+  const { loginWithGoogle, loginWithCredentials } = useApp();
 
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
   const [showGoogleDialog, setShowGoogleDialog] = useState<boolean>(false);
@@ -23,28 +25,15 @@ export const LoginModal: React.FC = () => {
   // Form states
   const [usernameOrEmail, setUsernameOrEmail] = useState<string>('radhika_instructor');
   const [password, setPassword] = useState<string>('password123');
-  const [displayName, setDisplayName] = useState<string>('');
-  const [signupRole, setSignupRole] = useState<'client' | 'instructor'>('client');
   const [errorMsg, setErrorMsg] = useState<string>('');
 
   const handleCredentialsSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
 
-    if (authMode === 'signin') {
-      const res = loginWithCredentials(usernameOrEmail, password);
-      if (!res.success) {
-        setErrorMsg(res.error || 'Login failed. Please check credentials.');
-      }
-    } else {
-      if (!displayName || !usernameOrEmail || !password) {
-        setErrorMsg('Please complete all fields.');
-        return;
-      }
-      const email = usernameOrEmail.includes('@')
-        ? usernameOrEmail
-        : `${usernameOrEmail.toLowerCase().replace(/\s+/g, '')}@example.com`;
-      registerUser(displayName, email, usernameOrEmail, signupRole);
+    const res = loginWithCredentials(usernameOrEmail, password);
+    if (!res.success) {
+      setErrorMsg(res.error || 'Login failed. Please check credentials.');
     }
   };
 
@@ -53,22 +42,27 @@ export const LoginModal: React.FC = () => {
     setShowGoogleDialog(false);
   };
 
+  // If user chooses Sign Up, launch the 3-step setup wizard
+  if (authMode === 'signup') {
+    return <SignUpWizardModal onCancel={() => setAuthMode('signin')} />;
+  }
+
   return (
-    <div className="w-full min-h-screen flex flex-col justify-between p-4 sm:p-6 md:p-8 bg-gradient-to-b from-[#FAF8F5] via-[#F4EFEA] to-[#E7DFD4] dark:from-[#131814] dark:via-[#19211A] dark:to-[#121613] text-stone-900 dark:text-[#EDF3EC] select-none transition-colors duration-200">
+    <div className="w-full min-h-screen flex flex-col justify-between p-4 sm:p-6 md:p-8 bg-[#F9F6F0] text-[#2D251E] select-none transition-colors duration-200">
       {/* Top Studio Brand Bar */}
       <header className="w-full max-w-md mx-auto pt-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-emerald-800 dark:bg-emerald-700 text-white flex items-center justify-center shadow-xs">
+          <div className="w-8 h-8 rounded-full bg-emerald-800 text-white flex items-center justify-center shadow-xs">
             <Sparkles className="w-4 h-4 text-emerald-200" />
           </div>
           <div>
-            <span className="font-serif font-bold text-lg text-stone-900 dark:text-[#EDF3EC] tracking-tight block leading-tight">
+            <span className="font-serif font-bold text-lg text-stone-900 tracking-tight block leading-tight">
               RC Pilates
             </span>
-            <span className="text-xs text-stone-500 dark:text-stone-400 font-medium">Fitness Studio</span>
+            <span className="text-xs text-stone-500 font-medium">Fitness &amp; Reformer Studio</span>
           </div>
         </div>
-        <span className="text-xs font-semibold px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+        <span className="text-xs font-semibold px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
           Mindful Sanctuary
         </span>
       </header>
@@ -78,39 +72,39 @@ export const LoginModal: React.FC = () => {
         {/* Landing Hero Message with Studio Drawing */}
         <div className="text-center space-y-3">
           <div className="w-full max-w-xs mx-auto py-1">
-            <PilatesReformerDrawing className="w-full h-auto text-emerald-800 dark:text-emerald-300 drop-shadow-xs" />
+            <PilatesReformerDrawing className="w-full h-auto text-emerald-800 drop-shadow-xs" />
           </div>
 
           <div>
-            <h1 className="font-serif text-3xl sm:text-4xl font-bold text-stone-900 dark:text-stone-100 tracking-tight leading-tight">
+            <h1 className="font-serif text-3xl sm:text-4xl font-bold text-stone-900 tracking-tight leading-tight">
               Mindful Movement, Deeply Tailored
             </h1>
-            <p className="text-sm text-stone-600 dark:text-stone-300 font-light max-w-xs mx-auto leading-relaxed mt-1">
+            <p className="text-sm text-stone-600 font-light max-w-xs mx-auto leading-relaxed mt-1">
               Reformer pilates, customized studio diet plans, and personal instructor alignment.
             </p>
           </div>
 
           {/* Value Pills */}
-          <div className="flex flex-wrap items-center justify-center gap-2 pt-2 text-xs font-semibold text-stone-700 dark:text-stone-300">
-            <span className="flex items-center gap-1.5 bg-white/90 dark:bg-[#1C231E]/90 px-3 py-1.5 rounded-full border border-stone-200 dark:border-stone-800 shadow-xs">
-              <Sliders className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400" />
+          <div className="flex flex-wrap items-center justify-center gap-2 pt-2 text-xs font-semibold text-stone-700">
+            <span className="flex items-center gap-1.5 bg-white/90 px-3 py-1.5 rounded-full border border-stone-200 shadow-xs">
+              <Sliders className="w-3.5 h-3.5 text-emerald-700" />
               <span>Custom Reformer</span>
             </span>
-            <span className="flex items-center gap-1.5 bg-white/90 dark:bg-[#1C231E]/90 px-3 py-1.5 rounded-full border border-stone-200 dark:border-stone-800 shadow-xs">
-              <Apple className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
+            <span className="flex items-center gap-1.5 bg-white/90 px-3 py-1.5 rounded-full border border-stone-200 shadow-xs">
+              <Apple className="w-3.5 h-3.5 text-amber-700" />
               <span>Tailored Nutrition</span>
             </span>
-            <span className="flex items-center gap-1.5 bg-white/90 dark:bg-[#1C231E]/90 px-3 py-1.5 rounded-full border border-stone-200 dark:border-stone-800 shadow-xs">
-              <Shield className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400" />
+            <span className="flex items-center gap-1.5 bg-white/90 px-3 py-1.5 rounded-full border border-stone-200 shadow-xs">
+              <Shield className="w-3.5 h-3.5 text-emerald-700" />
               <span>Master Instructors</span>
             </span>
           </div>
         </div>
 
         {/* Auth Box */}
-        <div className="bg-white/95 dark:bg-[#1C231E]/95 backdrop-blur-md rounded-3xl p-5 sm:p-6 shadow-ambient-lg border border-stone-200/90 dark:border-stone-800 w-full space-y-4 transition-colors">
+        <div className="bg-white/95 backdrop-blur-md rounded-3xl p-5 sm:p-6 shadow-ambient-lg border border-stone-200/90 w-full space-y-4 transition-colors">
           {/* Sign In vs Sign Up Tabs */}
-          <div className="flex bg-stone-100 dark:bg-stone-800/80 p-1.5 rounded-2xl border border-stone-200/80 dark:border-stone-700">
+          <div className="flex bg-[#F2E9DC] p-1.5 rounded-2xl border border-stone-200/80">
             <button
               type="button"
               onClick={() => {
@@ -119,8 +113,8 @@ export const LoginModal: React.FC = () => {
               }}
               className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${
                 authMode === 'signin'
-                  ? 'bg-white dark:bg-[#242D26] text-stone-900 dark:text-stone-100 shadow-xs'
-                  : 'text-stone-500 dark:text-stone-400 hover:text-stone-800'
+                  ? 'bg-white text-stone-900 shadow-xs'
+                  : 'text-stone-600 hover:text-stone-900'
               }`}
             >
               Sign In
@@ -131,19 +125,16 @@ export const LoginModal: React.FC = () => {
                 setAuthMode('signup');
                 setErrorMsg('');
               }}
-              className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${
-                authMode === 'signup'
-                  ? 'bg-white dark:bg-[#242D26] text-stone-900 dark:text-stone-100 shadow-xs'
-                  : 'text-stone-500 dark:text-stone-400 hover:text-stone-800'
-              }`}
+              className="flex-1 py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1 text-emerald-900 hover:text-emerald-950 font-semibold"
             >
-              Join Studio
+              <UserPlus className="w-3.5 h-3.5 text-emerald-700" />
+              <span>Sign Up (Wizard)</span>
             </button>
           </div>
 
           {errorMsg && (
-            <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-xs font-semibold flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0 text-amber-700 dark:text-amber-400" />
+            <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-semibold flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 text-amber-700" />
               <span>{errorMsg}</span>
             </div>
           )}
@@ -153,7 +144,7 @@ export const LoginModal: React.FC = () => {
             <button
               type="button"
               onClick={() => setShowGoogleDialog(true)}
-              className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-2xl bg-white dark:bg-[#242D26] hover:bg-stone-50 dark:hover:bg-[#2B352E] border border-stone-200 dark:border-stone-700 shadow-xs text-sm font-bold text-stone-800 dark:text-stone-100 transition-all active:scale-[0.99]"
+              className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-2xl bg-white hover:bg-stone-50 border border-stone-200 shadow-xs text-sm font-bold text-stone-800 transition-all active:scale-[0.99]"
             >
               {/* Google G Icon */}
               <svg className="w-4 h-4" viewBox="0 0 24 24">
@@ -179,36 +170,18 @@ export const LoginModal: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-3 my-2">
-            <div className="flex-1 h-px bg-stone-200 dark:bg-stone-800" />
-            <span className="text-xs font-semibold text-stone-500 dark:text-stone-400">
-              Or with username &amp; password
+            <div className="flex-1 h-px bg-stone-200" />
+            <span className="text-xs font-semibold text-stone-500">
+              Or with studio username &amp; password
             </span>
-            <div className="flex-1 h-px bg-stone-200 dark:bg-stone-800" />
+            <div className="flex-1 h-px bg-stone-200" />
           </div>
 
           {/* Option 2: Username & Password Form */}
           <form onSubmit={handleCredentialsSubmit} className="space-y-3">
-            {authMode === 'signup' && (
-              <div>
-                <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
-                  Full Name
-                </label>
-                <div className="relative">
-                  <User className="w-4 h-4 absolute left-3 top-3 text-stone-400" />
-                  <input
-                    type="text"
-                    value={displayName}
-                    onChange={e => setDisplayName(e.target.value)}
-                    placeholder="e.g. Clara Oswald"
-                    className="w-full pl-9 pr-3 py-2.5 text-xs bg-[#FAF8F5] dark:bg-[#242D26] border border-stone-200 dark:border-stone-700 rounded-xl focus:bg-white dark:focus:bg-[#1C231E] focus:outline-none focus:ring-2 focus:ring-emerald-700 text-stone-900 dark:text-stone-100"
-                  />
-                </div>
-              </div>
-            )}
-
             <div>
-              <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
-                {authMode === 'signup' ? 'Choose Username or Email' : 'Username or Email'}
+              <label className="block text-xs font-bold text-stone-700 mb-1">
+                Username or Email
               </label>
               <div className="relative">
                 <Mail className="w-4 h-4 absolute left-3 top-3.5 text-stone-400" />
@@ -216,20 +189,18 @@ export const LoginModal: React.FC = () => {
                   type="text"
                   value={usernameOrEmail}
                   onChange={e => setUsernameOrEmail(e.target.value)}
-                  placeholder="e.g. radhika_instructor or sandeep_client"
-                  className="w-full pl-9 pr-3 py-2.5 text-xs bg-[#FAF8F5] dark:bg-[#242D26] border border-stone-200 dark:border-stone-700 rounded-xl focus:bg-white dark:focus:bg-[#1C231E] focus:outline-none focus:ring-2 focus:ring-emerald-700 text-stone-900 dark:text-stone-100"
+                  placeholder="e.g. radhika_instructor or elena_client"
+                  className="w-full pl-9 pr-3 py-2.5 text-xs bg-[#FAF8F5] border border-stone-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700 text-stone-900"
                 />
               </div>
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="block text-[11px] font-semibold text-stone-600 dark:text-stone-400">
+                <label className="block text-[11px] font-semibold text-stone-600">
                   Password
                 </label>
-                {authMode === 'signin' && (
-                  <span className="text-[10px] text-stone-400">Demo password: password123</span>
-                )}
+                <span className="text-[10px] text-stone-400">Demo password: password123</span>
               </div>
               <div className="relative">
                 <Lock className="w-4 h-4 absolute left-3 top-3 text-stone-400" />
@@ -238,87 +209,58 @@ export const LoginModal: React.FC = () => {
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-9 pr-3 py-2 text-xs bg-[#FAF8F5] dark:bg-[#242D26] border border-stone-200 dark:border-stone-700 rounded-xl focus:bg-white dark:focus:bg-[#1C231E] focus:outline-none focus:ring-2 focus:ring-emerald-700 text-stone-900 dark:text-stone-100"
+                  className="w-full pl-9 pr-3 py-2 text-xs bg-[#FAF8F5] border border-stone-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700 text-stone-900"
                 />
               </div>
             </div>
-
-            {authMode === 'signup' && (
-              <div>
-                <label className="block text-[11px] font-semibold text-stone-600 dark:text-stone-400 mb-1">
-                  Account Role
-                </label>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <button
-                    type="button"
-                    onClick={() => setSignupRole('client')}
-                    className={`py-2 px-3 rounded-xl border text-center transition-all ${
-                      signupRole === 'client'
-                        ? 'bg-emerald-50 dark:bg-emerald-950 border-emerald-600 text-emerald-900 dark:text-emerald-200 font-bold'
-                        : 'border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-400'
-                    }`}
-                  >
-                    Client / Member
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSignupRole('instructor')}
-                    className={`py-2 px-3 rounded-xl border text-center transition-all ${
-                      signupRole === 'instructor'
-                        ? 'bg-emerald-50 dark:bg-emerald-950 border-emerald-600 text-emerald-900 dark:text-emerald-200 font-bold'
-                        : 'border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-400'
-                    }`}
-                  >
-                    Instructor
-                  </button>
-                </div>
-              </div>
-            )}
 
             <button
               type="submit"
               className="w-full py-3 px-4 rounded-2xl bg-emerald-800 hover:bg-emerald-900 text-white font-semibold text-xs shadow-md transition-all active:scale-[0.99] flex items-center justify-center gap-2 mt-2"
             >
-              <span>{authMode === 'signin' ? 'Sign In to RC Pilates' : 'Create RC Pilates Account'}</span>
+              <span>Sign In to RC Pilates</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </form>
 
+          {/* New User Callout */}
+          <div className="p-3 rounded-2xl bg-[#F6F1EA] border border-[#E3D7C7] flex items-center justify-between">
+            <div>
+              <p className="text-xs font-bold text-[#4A3B2C]">New to RC Pilates?</p>
+              <p className="text-[11px] text-[#786B5D]">Set up profile, height, weight &amp; goals</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setAuthMode('signup')}
+              className="px-3 py-1.5 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-bold shadow-xs transition-transform active:scale-95"
+            >
+              Start Sign Up &rarr;
+            </button>
+          </div>
+
           {/* Quick Demo Switcher Pills */}
-          <div className="pt-3 border-t border-stone-100 dark:border-stone-800 text-center">
-            <p className="text-xs text-stone-500 dark:text-stone-400 mb-2 font-semibold">1-Tap Role Showcase:</p>
+          <div className="pt-3 border-t border-stone-100 text-center">
+            <p className="text-xs text-stone-500 mb-2 font-semibold">1-Tap Quick Demo:</p>
             <div className="flex items-center justify-center gap-2 flex-wrap">
               <button
                 type="button"
                 onClick={() => {
                   loginWithGoogle('rohan.sethi12126@gmail.com', 'Radhika Chopra');
                 }}
-                className="text-xs font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/70 hover:bg-emerald-100 px-3 py-1.5 rounded-full border border-emerald-300 dark:border-emerald-800 flex items-center gap-1.5 transition-all shadow-xs"
+                className="text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-full border border-emerald-300 flex items-center gap-1.5 transition-all shadow-xs"
               >
-                <Shield className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400" />
-                <span>Instructor (rohan.sethi12126@gmail.com)</span>
+                <Shield className="w-3.5 h-3.5 text-emerald-700" />
+                <span>Instructor (Radhika Chopra)</span>
               </button>
-
               <button
                 type="button"
                 onClick={() => {
                   loginWithGoogle('elena.vance@gmail.com', 'Elena Vance');
                 }}
-                className="text-xs font-bold text-stone-800 dark:text-stone-200 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 px-3 py-1.5 rounded-full border border-stone-300 dark:border-stone-700 flex items-center gap-1.5 transition-all shadow-xs"
+                className="text-xs font-bold text-stone-700 bg-stone-100 hover:bg-stone-200 px-3 py-1.5 rounded-full border border-stone-200 flex items-center gap-1.5 transition-all shadow-xs"
               >
-                <User className="w-3.5 h-3.5 text-stone-500" />
-                <span>Existing Client (Elena)</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  loginWithGoogle('priya.sharma@gmail.com', 'Priya Sharma');
-                }}
-                className="text-xs font-bold text-amber-900 dark:text-amber-200 bg-amber-50 dark:bg-amber-950/70 hover:bg-amber-100 px-3 py-1.5 rounded-full border border-amber-300 dark:border-amber-800 flex items-center gap-1.5 transition-all shadow-xs"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                <span>New Client Onboarding Demo</span>
+                <User className="w-3.5 h-3.5 text-stone-600" />
+                <span>Client (Elena Vance)</span>
               </button>
             </div>
           </div>
@@ -326,7 +268,7 @@ export const LoginModal: React.FC = () => {
       </div>
 
       {/* Footer copyright */}
-      <footer className="w-full max-w-md mx-auto text-center py-2 text-xs text-stone-500 dark:text-stone-400 font-medium">
+      <footer className="w-full max-w-md mx-auto text-center py-2 text-xs text-stone-500 font-medium">
         RC Pilates &amp; Fitness Studio • Mindful Movement &amp; Nutrition
       </footer>
 
