@@ -43,3 +43,4 @@ export const StudioLogo: React.FC<StudioLogoProps> = ({
     </div>
   );
 };
+

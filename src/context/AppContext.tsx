@@ -79,6 +79,7 @@ interface AppContextType {
     extraData?: Partial<UserProfile>
   ) => void;
   completeClientOnboarding: (data: {
+    avatarUrl?: string;
     displayName?: string;
     phone?: string;
     height?: string;
@@ -398,6 +399,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Complete Onboarding for New Client
   const completeClientOnboarding = (data: {
+    avatarUrl?: string;
     displayName?: string;
     phone?: string;
     fitnessGoal?: string;
@@ -407,6 +409,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!currentUser) return;
     const updatedUser: UserProfile = {
       ...currentUser,
+      avatarUrl: data.avatarUrl || currentUser.avatarUrl,
       displayName: data.displayName || currentUser.displayName,
       phone: data.phone || currentUser.phone || '+91 98000 12345',
       fitnessGoal: data.fitnessGoal || currentUser.fitnessGoal || 'Core Strength & Posture',
@@ -473,7 +476,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       email,
       username,
       role,
-      avatarUrl: `https://api.dicebear.com/7.x/notionists/svg?seed=${username}&backgroundColor=f4ece1`,
+      avatarUrl: extraData?.avatarUrl || `https://api.dicebear.com/7.x/notionists/svg?seed=${username}&backgroundColor=f4ece1`,
       membershipTier: role === 'instructor' ? 'Senior Master Instructor' : 'Reformer Unlimited',
       joinedDate: 'Today',
       bio: role === 'instructor' ? 'RC Pilates & Fitness Studio instructor.' : 'Passionate RC Pilates studio member.',
