@@ -8,6 +8,12 @@ export interface NotificationStatus {
   scheduledCount: number;
 }
 
+interface ExtendedNotificationOptions extends NotificationOptions {
+  actions?: Array<{ action: string; title: string; icon?: string }>;
+  renotify?: boolean;
+  vibrate?: number[];
+}
+
 const CHANNEL_ID = 'rc_pilates_reminders';
 export const ACTION_TYPE_CLASS_REMINDER = 'CLASS_REMINDER_ACTIONS';
 
@@ -57,24 +63,61 @@ export async function initializeNotificationChannels(): Promise<void> {
   }
 }
 
+let swRegistration: ServiceWorkerRegistration | null = null;
+
 /**
- * Listen for user tapping "Attending" or "Not attending" in Android notification shade
+ * Register Service Worker for system notification shade action buttons
+ */
+export async function registerServiceWorker(): Promise<ServiceWorkerRegistration | null> {
+  if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
+    return null;
+  }
+  if (swRegistration) return swRegistration;
+
+  try {
+    swRegistration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+    await navigator.serviceWorker.ready;
+    return swRegistration;
+  } catch (err) {
+    console.warn('Service worker registration failed:', err);
+    return null;
+  }
+}
+
+/**
+ * Listen for user tapping "Attending" or "Not attending" in system notification shade (Android & Web)
  */
 export function setupNotificationListeners(
   onAttendanceConfirmed: (sessionId: string, confirmation: 'attending' | 'not_attending') => void
 ): void {
-  if (!Capacitor.isNativePlatform()) return;
+  // 1. Android Native Capacitor shade button taps
+  if (Capacitor.isNativePlatform()) {
+    try {
+      LocalNotifications.addListener('localNotificationActionPerformed', (action) => {
+        const actionId = action.actionId;
+        const sessionId = action.notification.extra?.sessionId || 'slot-2';
+        if (actionId === 'attending' || actionId === 'not_attending') {
+          onAttendanceConfirmed(sessionId, actionId);
+        }
+      });
+    } catch (err) {
+      console.warn('Error adding notification action listener:', err);
+    }
+  }
 
-  try {
-    LocalNotifications.addListener('localNotificationActionPerformed', (action) => {
-      const actionId = action.actionId;
-      const sessionId = action.notification.extra?.sessionId || 'slot-2';
-      if (actionId === 'attending' || actionId === 'not_attending') {
-        onAttendanceConfirmed(sessionId, actionId);
+  // 2. Web & PWA notification shade action taps (via Service Worker message)
+  if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+    navigator.serviceWorker.addEventListener('message', (event) => {
+      if (event.data && event.data.type === 'RC_NOTIFICATION_ACTION') {
+        const { action, sessionId } = event.data;
+        if (action === 'attending' || action === 'not_attending') {
+          onAttendanceConfirmed(sessionId || 'slot-2', action);
+        }
       }
     });
-  } catch (err) {
-    console.warn('Error adding notification action listener:', err);
+
+    // Proactively register service worker
+    registerServiceWorker().catch(() => {});
   }
 }
 
@@ -99,9 +142,16 @@ export async function requestNotificationPermission(): Promise<boolean> {
   // Web Browser fallback
   if (typeof window !== 'undefined' && 'Notification' in window) {
     try {
-      if (Notification.permission === 'granted') return true;
+      if (Notification.permission === 'granted') {
+        await registerServiceWorker();
+        return true;
+      }
       const perm = await Notification.requestPermission();
-      return perm === 'granted';
+      if (perm === 'granted') {
+        await registerServiceWorker();
+        return true;
+      }
+      return false;
     } catch (err) {
       console.warn('Web notification request failed:', err);
       return false;
@@ -193,40 +243,52 @@ export async function triggerDemoNotification(
     }
   }
 
-  // Web Browser / iOS PWA Fallback: trigger both system notification and interactive in-app banner
-  setTimeout(() => {
-    // 1. Native browser notification
-    if ('Notification' in window && Notification.permission === 'granted') {
-      try {
+  // Web Browser / PWA: Trigger native system notification via Service Worker in the Notification Shade
+  setTimeout(async () => {
+    try {
+      const reg = await registerServiceWorker();
+      if (reg && 'showNotification' in reg) {
+        const options: ExtendedNotificationOptions = {
+          body,
+          icon: '/pwa-icon-192.png',
+          badge: '/favicon.png',
+          tag: 'rc-pilates-reminder',
+          renotify: true,
+          requireInteraction: true,
+          data: {
+            sessionId: 'slot-2',
+            type
+          },
+          actions:
+            type === 'class-reminder'
+              ? [
+                  {
+                    action: 'attending',
+                    title: 'Attending'
+                  },
+                  {
+                    action: 'not_attending',
+                    title: 'Not attending'
+                  }
+                ]
+              : undefined
+        };
+        await reg.showNotification(title, options as NotificationOptions);
+      } else if ('Notification' in window && Notification.permission === 'granted') {
         new Notification(title, {
           body,
-          icon: '/pwa-icon-192.png'
+          icon: '/pwa-icon-192.png',
+          badge: '/favicon.png'
         });
-      } catch (e) {
-        console.warn('Native notification failed:', e);
       }
-    }
-
-    // 2. Dispatch in-app interactive notification banner with "Attending" & "Not attending" buttons
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(
-        new CustomEvent('rc-in-app-notification', {
-          detail: {
-            title,
-            body,
-            type,
-            sessionId: 'slot-2',
-            instructorName: 'Radhika Chopra',
-            time: '08:00 AM'
-          }
-        })
-      );
+    } catch (e) {
+      console.warn('System notification shade display failed:', e);
     }
   }, delaySeconds * 1000);
 
   return {
     success: true,
-    message: `Alert arriving in ${delaySeconds} seconds with interactive "Attending" & "Not attending" buttons!`
+    message: `Alert arriving in ${delaySeconds}s! Swipe down your phone's notification shade for "Attending" & "Not attending" buttons.`
   };
 }
 
@@ -289,6 +351,33 @@ export async function scheduleClassReminder45Min(
           }
         ]
       });
+    } else {
+      // Web / PWA fallback scheduling
+      const msUntilTrigger = triggerTime.getTime() - Date.now();
+      if (msUntilTrigger > 0 && msUntilTrigger < 24 * 60 * 60 * 1000) {
+        setTimeout(async () => {
+          try {
+            const reg = await registerServiceWorker();
+            if (reg && 'showNotification' in reg) {
+              const options: ExtendedNotificationOptions = {
+                body: `"${session.sessionTitle}" starts at ${startTimeStr} with ${instructorName}. Are you attending?`,
+                icon: '/pwa-icon-192.png',
+                badge: '/favicon.png',
+                tag: `rc-session-${session.id}`,
+                requireInteraction: true,
+                data: { sessionId: session.id, type: 'class-reminder' },
+                actions: [
+                  { action: 'attending', title: 'Attending' },
+                  { action: 'not_attending', title: 'Not attending' }
+                ]
+              };
+              await reg.showNotification(`🧘 RC Pilates • Class in 45 Minutes`, options as NotificationOptions);
+            }
+          } catch (e) {
+            console.warn('Scheduled web notification failed:', e);
+          }
+        }, msUntilTrigger);
+      }
     }
 
     return true;
@@ -337,6 +426,25 @@ export async function scheduleFeeReminder1DayBefore(
           }
         ]
       });
+    } else {
+      const msUntilTrigger = triggerTime.getTime() - Date.now();
+      if (msUntilTrigger > 0 && msUntilTrigger < 24 * 60 * 60 * 1000) {
+        setTimeout(async () => {
+          try {
+            const reg = await registerServiceWorker();
+            if (reg && 'showNotification' in reg) {
+              await reg.showNotification('💳 RC Pilates • Membership Fee Due Tomorrow', {
+                body: `Your studio membership for ${client.feeRecord?.packageTitle} is due tomorrow (${client.feeRecord?.dueDate}).`,
+                icon: '/pwa-icon-192.png',
+                badge: '/favicon.png',
+                tag: `rc-fee-${client.id}`
+              });
+            }
+          } catch (e) {
+            console.warn('Scheduled web fee notification failed:', e);
+          }
+        }, msUntilTrigger);
+      }
     }
 
     return true;

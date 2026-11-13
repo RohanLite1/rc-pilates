@@ -1182,7 +1182,7 @@ export const ClientDossierModal: React.FC<ClientDossierModalProps> = ({
 
               {/* Add Multi-Day Alarm-Style Schedule Inside */}
               {showAddSlot && (
-                <div className="bg-white dark:bg-[#1C231E] p-5 rounded-3xl border border-stone-200 dark:border-stone-800 space-y-4 shadow-ambient animate-in fade-in">
+                <div className="bg-white dark:bg-[#1C231E] p-5 rounded-3xl border border-stone-200 dark:border-stone-800 space-y-4 shadow-ambient animate-in fade-in overflow-hidden">
                   <div className="border-b border-stone-100 dark:border-stone-800 pb-2">
                     <h5 className="font-serif font-bold text-lg text-stone-900 dark:text-stone-100">
                       Schedule Classes for {client.displayName}
@@ -1218,13 +1218,13 @@ export const ClientDossierModal: React.FC<ClientDossierModalProps> = ({
                       />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2.5 sm:gap-3 pt-1">
+                    <div className="space-y-3 pt-1">
                       <div>
                         <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
                           Starting Date
                         </label>
                         <div className="relative">
-                          <Calendar className="w-4 h-4 text-stone-400 absolute left-3 top-3 pointer-events-none" />
+                          <Calendar className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                           <input
                             type="date"
                             required
@@ -1234,7 +1234,7 @@ export const ClientDossierModal: React.FC<ClientDossierModalProps> = ({
                               setNewSlotDate(val);
                               updateDatesFromDuration(newSlotRepeatWeeks, val);
                             }}
-                            className="w-full pl-9 pr-2.5 py-2.5 bg-[#FAF8F5] dark:bg-[#242D26] border border-stone-200 dark:border-stone-700 rounded-2xl font-medium text-xs text-left min-h-[44px] text-stone-900 dark:text-stone-100"
+                            className="w-full pl-10 pr-3.5 py-2.5 bg-[#FAF8F5] dark:bg-[#242D26] border border-stone-200 dark:border-stone-700 rounded-2xl font-medium text-xs text-left min-h-[44px] text-stone-900 dark:text-stone-100 block box-border"
                           />
                         </div>
                       </div>
@@ -1244,14 +1244,14 @@ export const ClientDossierModal: React.FC<ClientDossierModalProps> = ({
                           Ending Date
                         </label>
                         <div className="relative">
-                          <Calendar className="w-4 h-4 text-stone-400 absolute left-3 top-3 pointer-events-none" />
+                          <Calendar className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                           <input
                             type="date"
                             required
                             value={newSlotEndDate}
                             min={newSlotDate}
                             onChange={e => setNewSlotEndDate(e.target.value)}
-                            className="w-full pl-9 pr-2.5 py-2.5 bg-[#FAF8F5] dark:bg-[#242D26] border border-stone-200 dark:border-stone-700 rounded-2xl font-medium text-xs text-left min-h-[44px] text-stone-900 dark:text-stone-100"
+                            className="w-full pl-10 pr-3.5 py-2.5 bg-[#FAF8F5] dark:bg-[#242D26] border border-stone-200 dark:border-stone-700 rounded-2xl font-medium text-xs text-left min-h-[44px] text-stone-900 dark:text-stone-100 block box-border"
                           />
                         </div>
                       </div>

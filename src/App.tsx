@@ -14,7 +14,6 @@ import { InstructorScheduleView } from './components/instructor/InstructorSchedu
 import { ClientDossierModal } from './components/instructor/ClientDossierModal';
 import { ProfileView } from './components/common/ProfileView';
 import { StartupAnimation } from './components/common/StartupAnimation';
-import { InAppNotificationBanner } from './components/common/InAppNotificationBanner';
 import type { UserProfile } from './types';
 import { initializeNotificationChannels, requestNotificationPermission } from './services/notificationService';
 import { App as CapApp } from '@capacitor/app';
@@ -207,7 +206,6 @@ export default function App() {
   return (
     <AppProvider>
       <StartupAnimation />
-      <InAppNotificationBanner />
       <MainAppContent />
     </AppProvider>
   );

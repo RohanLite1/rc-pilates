@@ -221,3 +221,28 @@ html.dark ::-webkit-scrollbar-thumb:hover {
   will-change: transform, opacity;
 }
 
+/* iOS WebKit & Cross-Browser Date Input Left Alignment & Box Model */
+input[type="date"] {
+  text-align: left !important;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+input[type="date"]::-webkit-date-and-time-value {
+  text-align: left !important;
+  display: block !important;
+  width: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  opacity: 0.5;
+  cursor: pointer;
+}
+
+

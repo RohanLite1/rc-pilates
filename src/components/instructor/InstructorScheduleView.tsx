@@ -453,7 +453,7 @@ export const InstructorScheduleView: React.FC = () => {
       {/* New Timeslot Modal */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white dark:bg-[#1C231E] rounded-3xl p-6 w-full max-w-sm shadow-2xl border border-stone-200 dark:border-stone-800 animate-in zoom-in-95 text-stone-900 dark:text-stone-100 space-y-4">
+          <div className="bg-white dark:bg-[#1C231E] rounded-3xl p-6 w-full max-w-sm shadow-2xl border border-stone-200 dark:border-stone-800 animate-in zoom-in-95 text-stone-900 dark:text-stone-100 space-y-4 overflow-hidden">
             <div className="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-stone-800">
               <h3 className="font-serif font-bold text-lg">Schedule New Class</h3>
               <button
@@ -504,13 +504,13 @@ export const InstructorScheduleView: React.FC = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-2.5 sm:gap-3 pt-1">
+              <div className="space-y-3 pt-1">
                 <div>
                   <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
                     Starting Date
                   </label>
                   <div className="relative">
-                    <Calendar className="w-4 h-4 text-stone-400 absolute left-3 top-3 pointer-events-none" />
+                    <Calendar className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                     <input
                       type="date"
                       required
@@ -520,7 +520,7 @@ export const InstructorScheduleView: React.FC = () => {
                         setModalDate(val);
                         updateDatesFromDuration(repeatWeeks, val);
                       }}
-                      className="w-full pl-9 pr-2.5 py-2.5 rounded-2xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-[#242D26] text-stone-900 dark:text-stone-100 font-medium text-xs text-left min-h-[44px]"
+                      className="w-full pl-10 pr-3.5 py-2.5 rounded-2xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-[#242D26] text-stone-900 dark:text-stone-100 font-medium text-xs text-left min-h-[44px] block box-border"
                     />
                   </div>
                 </div>
@@ -530,14 +530,14 @@ export const InstructorScheduleView: React.FC = () => {
                     Ending Date
                   </label>
                   <div className="relative">
-                    <Calendar className="w-4 h-4 text-stone-400 absolute left-3 top-3 pointer-events-none" />
+                    <Calendar className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                     <input
                       type="date"
                       required
                       value={modalEndDate}
                       min={modalDate}
                       onChange={e => setModalEndDate(e.target.value)}
-                      className="w-full pl-9 pr-2.5 py-2.5 rounded-2xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-[#242D26] text-stone-900 dark:text-stone-100 font-medium text-xs text-left min-h-[44px]"
+                      className="w-full pl-10 pr-3.5 py-2.5 rounded-2xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-[#242D26] text-stone-900 dark:text-stone-100 font-medium text-xs text-left min-h-[44px] block box-border"
                     />
                   </div>
                 </div>
