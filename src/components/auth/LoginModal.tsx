@@ -215,7 +215,7 @@ export const LoginModal: React.FC = () => {
 
             <button
               type="submit"
-              className="w-full py-3 px-4 rounded-2xl bg-emerald-800 hover:bg-emerald-900 text-white font-semibold text-xs shadow-md transition-all active:scale-[0.99] flex items-center justify-center gap-2 mt-2"
+              className="w-full py-3 px-4 rounded-2xl bg-[#675137] hover:bg-[#52402B] text-white font-semibold text-xs shadow-md transition-all active:scale-[0.99] flex items-center justify-center gap-2 mt-2"
             >
               <span>Sign In to RC Pilates</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -231,7 +231,7 @@ export const LoginModal: React.FC = () => {
             <button
               type="button"
               onClick={() => setAuthMode('signup')}
-              className="px-3 py-1.5 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-bold shadow-xs transition-transform active:scale-95"
+              className="px-3.5 py-1.5 rounded-xl bg-[#675137] hover:bg-[#52402B] text-white text-xs font-bold shadow-xs transition-transform active:scale-95"
             >
               Start Sign Up &rarr;
             </button>
@@ -246,9 +246,9 @@ export const LoginModal: React.FC = () => {
                 onClick={() => {
                   loginWithGoogle('rohan.sethi12126@gmail.com', 'Radhika Chopra');
                 }}
-                className="text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-full border border-emerald-300 flex items-center gap-1.5 transition-all shadow-xs"
+                className="text-xs font-bold text-[#675137] bg-[#F2E9DC] hover:bg-[#EAE0D2] px-3.5 py-1.5 rounded-full border border-[#D5C0A4] flex items-center gap-1.5 transition-all shadow-xs"
               >
-                <Shield className="w-3.5 h-3.5 text-emerald-700" />
+                <Shield className="w-3.5 h-3.5 text-[#675137]" />
                 <span>Instructor (Radhika Chopra)</span>
               </button>
               <button
@@ -256,7 +256,7 @@ export const LoginModal: React.FC = () => {
                 onClick={() => {
                   loginWithGoogle('elena.vance@gmail.com', 'Elena Vance');
                 }}
-                className="text-xs font-bold text-stone-700 bg-stone-100 hover:bg-stone-200 px-3 py-1.5 rounded-full border border-stone-200 flex items-center gap-1.5 transition-all shadow-xs"
+                className="text-xs font-bold text-stone-700 bg-stone-100 hover:bg-stone-200 px-3.5 py-1.5 rounded-full border border-stone-200 flex items-center gap-1.5 transition-all shadow-xs"
               >
                 <User className="w-3.5 h-3.5 text-stone-600" />
                 <span>Client (Elena Vance)</span>
@@ -314,21 +314,21 @@ export const LoginModal: React.FC = () => {
               <button
                 type="button"
                 onClick={() => handleGoogleSelect('rohan.sethi12126@gmail.com', 'Radhika Chopra')}
-                className="w-full flex items-center gap-3 p-3 rounded-2xl bg-emerald-50/80 dark:bg-emerald-950/70 hover:bg-emerald-100 border border-emerald-300 dark:border-emerald-800 transition-colors text-left"
+                className="w-full flex items-center gap-3 p-3 rounded-2xl bg-[#F2E9DC] hover:bg-[#EAE0D2] border border-[#D5C0A4] transition-colors text-left"
               >
-                <div className="w-10 h-10 rounded-full bg-emerald-800 text-white flex items-center justify-center font-serif text-xs font-bold ring-2 ring-emerald-600/40 shrink-0">
+                <div className="w-10 h-10 rounded-full bg-[#675137] text-white flex items-center justify-center font-serif text-xs font-bold ring-2 ring-[#D5C0A4] shrink-0">
                   RC
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
-                    <p className="text-xs font-bold text-emerald-950 dark:text-emerald-200 truncate">
+                    <p className="text-xs font-bold text-[#2D251E] truncate">
                       Rohan Sethi (Radhika Chopra)
                     </p>
-                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-emerald-200 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-100 font-bold shrink-0">
+                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-[#FAF6F0] text-[#675137] border border-[#D5C0A4] font-bold shrink-0">
                       Instructor
                     </span>
                   </div>
-                  <p className="text-[11px] text-emerald-800 dark:text-emerald-300 truncate">
+                  <p className="text-[11px] text-[#786B5D] truncate">
                     rohan.sethi12126@gmail.com
                   </p>
                 </div>
@@ -388,7 +388,7 @@ export const LoginModal: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setGoogleEmailInput('priya.sharma@gmail.com')}
-                  className="text-[10px] text-emerald-800 dark:text-emerald-400 font-bold hover:underline"
+                  className="text-[10px] text-[#675137] font-bold hover:underline"
                 >
                   Try New Client
                 </button>
@@ -402,7 +402,7 @@ export const LoginModal: React.FC = () => {
                     value={googleEmailInput}
                     onChange={e => setGoogleEmailInput(e.target.value)}
                     placeholder="e.g. user@gmail.com"
-                    className="w-full pl-8 pr-2 py-2 text-xs bg-stone-50 dark:bg-[#242D26] border border-stone-200 dark:border-stone-700 rounded-xl focus:bg-white dark:focus:bg-[#1C231E] focus:outline-none focus:ring-1 focus:ring-emerald-700 text-stone-900 dark:text-stone-100"
+                    className="w-full pl-8 pr-2 py-2 text-xs bg-stone-50 border border-stone-200 rounded-xl focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#675137] text-stone-900"
                   />
                 </div>
                 <button
@@ -412,13 +412,13 @@ export const LoginModal: React.FC = () => {
                       handleGoogleSelect(googleEmailInput.trim());
                     }
                   }}
-                  className="px-3.5 py-2 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-bold shadow-xs transition-colors"
+                  className="px-3.5 py-2 rounded-xl bg-[#675137] hover:bg-[#52402B] text-white text-xs font-bold shadow-xs transition-colors"
                 >
                   Continue
                 </button>
               </div>
               <p className="text-[10px] text-stone-400 font-medium">
-                Tip: Whitelisted Gmail <strong className="text-emerald-700 dark:text-emerald-400">rohan.sethi12126@gmail.com</strong> logs in as Instructor. Any other Gmail logs in as a Client.
+                Tip: Whitelisted Gmail <strong className="text-[#675137]">rohan.sethi12126@gmail.com</strong> logs in as Instructor. Any other Gmail logs in as a Client.
               </p>
             </div>
           </div>

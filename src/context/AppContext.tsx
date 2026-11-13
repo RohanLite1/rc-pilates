@@ -402,20 +402,41 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     avatarUrl?: string;
     displayName?: string;
     phone?: string;
+    height?: string;
+    weight?: string;
+    age?: string;
+    gender?: string;
     fitnessGoal?: string;
     experienceLevel?: string;
     dietaryPreference?: string;
   }) => {
     if (!currentUser) return;
+    const resolvedHeight = data.height || currentUser.height || '165 cm';
+    const resolvedWeight = data.weight || currentUser.weight || '60 kg';
+    const resolvedAge = data.age || currentUser.age || '28';
+    const resolvedGender = data.gender || currentUser.gender || 'Female';
+
     const updatedUser: UserProfile = {
       ...currentUser,
       avatarUrl: data.avatarUrl || currentUser.avatarUrl,
       displayName: data.displayName || currentUser.displayName,
       phone: data.phone || currentUser.phone || '+91 98000 12345',
+      height: resolvedHeight,
+      weight: resolvedWeight,
+      age: resolvedAge,
+      gender: resolvedGender,
       fitnessGoal: data.fitnessGoal || currentUser.fitnessGoal || 'Core Strength & Posture',
       experienceLevel: data.experienceLevel || currentUser.experienceLevel || 'Beginner',
       dietaryPreference: data.dietaryPreference || currentUser.dietaryPreference || 'Vegetarian',
-      isOnboarded: true
+      isOnboarded: true,
+      dietPlan: currentUser.dietPlan ? {
+        ...currentUser.dietPlan,
+        metrics: {
+          ...currentUser.dietPlan.metrics,
+          heightWeight: `${resolvedHeight} / ${resolvedWeight}`,
+          ageSex: `${resolvedAge} / ${resolvedGender}`
+        }
+      } : undefined
     };
 
     setCurrentUser(updatedUser);
@@ -505,8 +526,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (role === 'client') {
       setClients(prev => [newUser, ...prev]);
     }
-    setCurrentUser(newUser);
-    setActiveTab('dashboard');
+
+    // Only switch currentUser if registering as a self user (not when an instructor adds a member from roster)
+    if (!currentUser || currentUser.role !== 'instructor') {
+      setCurrentUser(newUser);
+      setActiveTab('dashboard');
+    }
   };
 
   const logout = () => {
