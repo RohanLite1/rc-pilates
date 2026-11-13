@@ -568,12 +568,12 @@ export const SignUpWizardModal: React.FC<SignUpWizardModalProps> = ({ onCancel }
                       onClick={() => setFitnessGoal(goal)}
                       className={`w-full p-2.5 rounded-2xl border text-left text-xs font-semibold flex items-center justify-between transition-all ${
                         fitnessGoal === goal
-                          ? 'bg-[#675137] text-white border-[#52402B] shadow-xs'
+                          ? 'bg-[#F2E9DC] text-[#675137] border-[#D5C0A4]'
                           : 'bg-white text-[#2D251E] border-[#EAE1D4] hover:bg-[#F2E9DC]'
                       }`}
                     >
                       <span>{goal}</span>
-                      {fitnessGoal === goal && <CheckCircle2 className="w-4 h-4 text-[#E6D7C3]" />}
+                      {fitnessGoal === goal && <CheckCircle2 className="w-4 h-4 text-[#675137]" />}
                     </button>
                   ))}
                 </div>

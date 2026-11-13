@@ -296,11 +296,13 @@ export const ClientDossierModal: React.FC<ClientDossierModalProps> = ({
         {/* Modal Top Bar */}
         <div className="px-5 py-4 bg-white dark:bg-[#1C231E] border-b border-stone-200 dark:border-stone-800 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img
-              src={client.avatarUrl}
-              alt={client.displayName}
-              className="w-11 h-11 rounded-full object-cover ring-2 ring-emerald-600/20"
-            />
+            <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 ring-2 ring-[#D5C0A4] shadow-xs bg-[#FAF6F0]">
+              <img
+                src={client.avatarUrl}
+                alt={client.displayName}
+                className="w-full h-full object-cover"
+              />
+            </div>
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-serif font-bold text-lg leading-tight">
@@ -1216,36 +1218,42 @@ export const ClientDossierModal: React.FC<ClientDossierModalProps> = ({
                       />
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    <div className="grid grid-cols-2 gap-2.5 sm:gap-3 pt-1">
                       <div>
-                        <label className="block font-bold text-stone-700 dark:text-stone-300 mb-1">
+                        <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
                           Starting Date
                         </label>
-                        <input
-                          type="date"
-                          required
-                          value={newSlotDate}
-                          onChange={e => {
-                            const val = e.target.value;
-                            setNewSlotDate(val);
-                            updateDatesFromDuration(newSlotRepeatWeeks, val);
-                          }}
-                          className="w-full p-2.5 bg-[#FAF8F5] dark:bg-[#242D26] border border-stone-200 dark:border-stone-700 rounded-xl font-medium text-stone-900 dark:text-stone-100"
-                        />
+                        <div className="relative">
+                          <Calendar className="w-4 h-4 text-stone-400 absolute left-3 top-3 pointer-events-none" />
+                          <input
+                            type="date"
+                            required
+                            value={newSlotDate}
+                            onChange={e => {
+                              const val = e.target.value;
+                              setNewSlotDate(val);
+                              updateDatesFromDuration(newSlotRepeatWeeks, val);
+                            }}
+                            className="w-full pl-9 pr-2.5 py-2.5 bg-[#FAF8F5] dark:bg-[#242D26] border border-stone-200 dark:border-stone-700 rounded-2xl font-medium text-xs text-left min-h-[44px] text-stone-900 dark:text-stone-100"
+                          />
+                        </div>
                       </div>
 
                       <div>
-                        <label className="block font-bold text-stone-700 dark:text-stone-300 mb-1">
+                        <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
                           Ending Date
                         </label>
-                        <input
-                          type="date"
-                          required
-                          value={newSlotEndDate}
-                          min={newSlotDate}
-                          onChange={e => setNewSlotEndDate(e.target.value)}
-                          className="w-full p-2.5 bg-[#FAF8F5] dark:bg-[#242D26] border border-stone-200 dark:border-stone-700 rounded-xl font-medium text-stone-900 dark:text-stone-100"
-                        />
+                        <div className="relative">
+                          <Calendar className="w-4 h-4 text-stone-400 absolute left-3 top-3 pointer-events-none" />
+                          <input
+                            type="date"
+                            required
+                            value={newSlotEndDate}
+                            min={newSlotDate}
+                            onChange={e => setNewSlotEndDate(e.target.value)}
+                            className="w-full pl-9 pr-2.5 py-2.5 bg-[#FAF8F5] dark:bg-[#242D26] border border-stone-200 dark:border-stone-700 rounded-2xl font-medium text-xs text-left min-h-[44px] text-stone-900 dark:text-stone-100"
+                          />
+                        </div>
                       </div>
                     </div>
 

@@ -9,6 +9,7 @@ import {
   MapPin,
   Repeat,
   CalendarDays,
+  Calendar,
   List,
   ChevronLeft,
   ChevronRight
@@ -503,36 +504,42 @@ export const InstructorScheduleView: React.FC = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <div className="grid grid-cols-2 gap-2.5 sm:gap-3 pt-1">
                 <div>
-                  <label className="block font-bold text-stone-700 dark:text-stone-300 mb-1">
+                  <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
                     Starting Date
                   </label>
-                  <input
-                    type="date"
-                    required
-                    value={modalDate}
-                    onChange={e => {
-                      const val = e.target.value;
-                      setModalDate(val);
-                      updateDatesFromDuration(repeatWeeks, val);
-                    }}
-                    className="w-full px-3 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-[#242D26] text-stone-900 dark:text-stone-100 font-medium"
-                  />
+                  <div className="relative">
+                    <Calendar className="w-4 h-4 text-stone-400 absolute left-3 top-3 pointer-events-none" />
+                    <input
+                      type="date"
+                      required
+                      value={modalDate}
+                      onChange={e => {
+                        const val = e.target.value;
+                        setModalDate(val);
+                        updateDatesFromDuration(repeatWeeks, val);
+                      }}
+                      className="w-full pl-9 pr-2.5 py-2.5 rounded-2xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-[#242D26] text-stone-900 dark:text-stone-100 font-medium text-xs text-left min-h-[44px]"
+                    />
+                  </div>
                 </div>
 
                 <div>
-                  <label className="block font-bold text-stone-700 dark:text-stone-300 mb-1">
+                  <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
                     Ending Date
                   </label>
-                  <input
-                    type="date"
-                    required
-                    value={modalEndDate}
-                    min={modalDate}
-                    onChange={e => setModalEndDate(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-[#242D26] text-stone-900 dark:text-stone-100 font-medium"
-                  />
+                  <div className="relative">
+                    <Calendar className="w-4 h-4 text-stone-400 absolute left-3 top-3 pointer-events-none" />
+                    <input
+                      type="date"
+                      required
+                      value={modalEndDate}
+                      min={modalDate}
+                      onChange={e => setModalEndDate(e.target.value)}
+                      className="w-full pl-9 pr-2.5 py-2.5 rounded-2xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-[#242D26] text-stone-900 dark:text-stone-100 font-medium text-xs text-left min-h-[44px]"
+                    />
+                  </div>
                 </div>
               </div>
 

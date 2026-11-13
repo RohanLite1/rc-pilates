@@ -13,6 +13,7 @@ import {
   ChevronRight,
   ExternalLink,
   CalendarCheck,
+  Calendar,
   Search
 } from 'lucide-react';
 import type { UserProfile } from '../../types';
@@ -795,28 +796,39 @@ export const InstructorDashboard: React.FC<InstructorDashboardProps> = ({ onOpen
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <div className="grid grid-cols-2 gap-2.5 sm:gap-3 pt-1">
                 <div>
-                  <label className="block text-stone-600 dark:text-stone-400 mb-1">Starting Date</label>
-                  <input
-                    type="date"
-                    value={slotDate}
-                    onChange={e => {
-                      setSlotDate(e.target.value);
-                      updateDatesFromDuration(repeatWeeks, e.target.value);
-                    }}
-                    className="w-full p-2.5 rounded-2xl bg-stone-50 dark:bg-[#242D26] border border-stone-200 dark:border-stone-700 text-stone-900 dark:text-stone-100 font-medium"
-                  />
+                  <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+                    Starting Date
+                  </label>
+                  <div className="relative">
+                    <Calendar className="w-4 h-4 text-stone-400 absolute left-3 top-3 pointer-events-none" />
+                    <input
+                      type="date"
+                      value={slotDate}
+                      onChange={e => {
+                        setSlotDate(e.target.value);
+                        updateDatesFromDuration(repeatWeeks, e.target.value);
+                      }}
+                      className="w-full pl-9 pr-2.5 py-2.5 rounded-2xl bg-stone-50 dark:bg-[#242D26] border border-stone-200 dark:border-stone-700 text-stone-900 dark:text-stone-100 font-medium text-xs text-left min-h-[44px]"
+                    />
+                  </div>
                 </div>
 
                 <div>
-                  <label className="block text-stone-600 dark:text-stone-400 mb-1">Ending Date</label>
-                  <input
-                    type="date"
-                    value={slotEndDate}
-                    onChange={e => setSlotEndDate(e.target.value)}
-                    className="w-full p-2.5 rounded-2xl bg-stone-50 dark:bg-[#242D26] border border-stone-200 dark:border-stone-700 text-stone-900 dark:text-stone-100 font-medium"
-                  />
+                  <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+                    Ending Date
+                  </label>
+                  <div className="relative">
+                    <Calendar className="w-4 h-4 text-stone-400 absolute left-3 top-3 pointer-events-none" />
+                    <input
+                      type="date"
+                      value={slotEndDate}
+                      min={slotDate}
+                      onChange={e => setSlotEndDate(e.target.value)}
+                      className="w-full pl-9 pr-2.5 py-2.5 rounded-2xl bg-stone-50 dark:bg-[#242D26] border border-stone-200 dark:border-stone-700 text-stone-900 dark:text-stone-100 font-medium text-xs text-left min-h-[44px]"
+                    />
+                  </div>
                 </div>
               </div>
 

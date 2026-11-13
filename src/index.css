@@ -38,6 +38,14 @@ html.dark body {
 }
 
 /* Custom serene scrollbar */
+input[type="date"] {
+  text-align: left !important;
+}
+
+input[type="date"]::-webkit-date-and-time-value {
+  text-align: left !important;
+}
+
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;

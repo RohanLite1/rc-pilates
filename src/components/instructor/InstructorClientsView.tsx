@@ -90,30 +90,32 @@ export const InstructorClientsView: React.FC<InstructorClientsViewProps> = ({ on
             className="bg-white dark:bg-[#1C231E] rounded-3xl p-5 shadow-ambient border border-stone-200 dark:border-stone-800 hover:border-emerald-300 dark:hover:border-emerald-700 transition-all space-y-3.5"
           >
             {/* Top row: Avatar, Name, Tier */}
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <img
-                  src={c.avatarUrl}
-                  alt={c.displayName}
-                  className="w-13 h-13 rounded-full object-cover ring-2 ring-emerald-600/20"
-                />
-                <div>
-                  <div className="flex items-center gap-2">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                <div className="w-14 h-14 rounded-full overflow-hidden shrink-0 ring-2 ring-[#D5C0A4] shadow-xs bg-[#FAF6F0]">
+                  <img
+                    src={c.avatarUrl}
+                    alt={c.displayName}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <h4 className="font-serif font-bold text-lg text-stone-900 dark:text-stone-100 leading-tight">
                       {c.displayName}
                     </h4>
-                    <span className="text-xs bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 px-2.5 py-0.5 rounded-full font-bold">
+                    <span className="text-[11px] bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 px-2.5 py-0.5 rounded-full font-bold whitespace-nowrap">
                       {c.membershipTier || 'Member'}
                     </span>
                   </div>
-                  <p className="text-xs text-stone-500 font-medium mt-0.5">{c.email}</p>
+                  <p className="text-xs text-stone-500 font-medium mt-0.5 truncate">{c.email}</p>
                   {(c.phone || c.fitnessGoal) && (
                     <div className="flex items-center gap-2 mt-1 flex-wrap">
                       {c.phone && (
-                        <span className="text-[11px] text-stone-500 font-medium">{c.phone}</span>
+                        <span className="text-[11px] text-stone-500 font-medium whitespace-nowrap">{c.phone}</span>
                       )}
                       {c.fitnessGoal && (
-                        <span className="text-[10px] bg-emerald-50 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 rounded-md font-semibold">
+                        <span className="text-[10px] bg-emerald-50 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 rounded-md font-semibold truncate max-w-full">
                           Goal: {c.fitnessGoal}
                         </span>
                       )}
@@ -122,7 +124,7 @@ export const InstructorClientsView: React.FC<InstructorClientsViewProps> = ({ on
                 </div>
               </div>
 
-              <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950 px-2.5 py-1 rounded-xl border border-emerald-200 dark:border-emerald-800">
+              <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950 px-2.5 py-1 rounded-xl border border-emerald-200 dark:border-emerald-800 shrink-0 whitespace-nowrap">
                 {c.dietPlan?.metrics.dailyIntake || '~1,600 kcal'}
               </span>
             </div>
