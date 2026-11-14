@@ -16,7 +16,9 @@ import {
   Sun,
   Moon,
   CalendarCheck,
-  Bell
+  Bell,
+  Info,
+  RotateCcw
 } from 'lucide-react';
 import { DayOfWeekPicker } from './DayOfWeekPicker';
 
@@ -37,7 +39,8 @@ interface PackageAndScheduleSelectorProps {
 
 export const PackageAndScheduleSelector: React.FC<PackageAndScheduleSelectorProps> = ({
   value,
-  onChange
+  onChange,
+  showExistingCustomerToggle = true
 }) => {
   const { batchSlots, studioTimeslots } = useApp();
 
@@ -48,12 +51,56 @@ export const PackageAndScheduleSelector: React.FC<PackageAndScheduleSelectorProp
 
   const handleSelectPackage = (pkgId: StudioPackageId) => {
     const pkg = STUDIO_PACKAGES.find(p => p.id === pkgId) || STUDIO_PACKAGES[0];
-    const newEndDate = calculateEndDateFromStart(value.startDate, pkg.durationMonths);
+    const newEndDate = value.isExistingCustomer
+      ? value.endDate
+      : calculateEndDateFromStart(value.startDate, pkg.durationMonths);
 
     onChange({
       ...value,
       packageChoice: pkgId,
       endDate: newEndDate,
+      selectedDays: activeSelectedDays
+    });
+  };
+
+  const handleStartDateChange = (newStart: string) => {
+    const newEndDate = value.isExistingCustomer
+      ? value.endDate
+      : calculateEndDateFromStart(newStart, currentPkg.durationMonths);
+
+    onChange({
+      ...value,
+      startDate: newStart,
+      endDate: newEndDate,
+      selectedDays: activeSelectedDays
+    });
+  };
+
+  const handleEndDateChange = (newEnd: string) => {
+    onChange({
+      ...value,
+      endDate: newEnd,
+      selectedDays: activeSelectedDays
+    });
+  };
+
+  const handleToggleExistingCustomer = (isExisting: boolean) => {
+    const newEndDate = isExisting
+      ? value.endDate
+      : calculateEndDateFromStart(value.startDate, currentPkg.durationMonths);
+
+    onChange({
+      ...value,
+      isExistingCustomer: isExisting,
+      endDate: newEndDate,
+      selectedDays: activeSelectedDays
+    });
+  };
+
+  const handleResetAutoDates = () => {
+    onChange({
+      ...value,
+      endDate: calculateEndDateFromStart(value.startDate, currentPkg.durationMonths),
       selectedDays: activeSelectedDays
     });
   };
@@ -170,52 +217,108 @@ export const PackageAndScheduleSelector: React.FC<PackageAndScheduleSelectorProp
         </div>
       </div>
 
-      {/* 3. Program Dates & Duration (Fixed to Joining Date & Auto-Calculated End Date) */}
+      {/* 3. Program Dates & Duration (With Existing Member Toggle for App Launch) */}
       <div className="bg-white rounded-2xl p-4 border border-stone-200 shadow-sm space-y-3">
         <div className="flex items-center justify-between">
           <label className="font-serif font-bold text-sm text-[#2D251E] flex items-center gap-1.5">
             <Calendar className="w-4 h-4 text-[#675137]" />
             <span>3. Program Dates &amp; Duration</span>
           </label>
-          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#FAF6F0] text-[#675137] border border-[#D5C0A4] flex items-center gap-1">
-            <Lock className="w-3 h-3 text-[#675137]" />
-            <span>Studio Fixed Schedule</span>
-          </span>
+
+          {showExistingCustomerToggle && (
+            <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-[#675137] bg-[#FAF6F0] px-2.5 py-1 rounded-xl border border-[#D5C0A4] hover:bg-[#F2E9DC] transition-colors">
+              <input
+                type="checkbox"
+                checked={!!value.isExistingCustomer}
+                onChange={e => handleToggleExistingCustomer(e.target.checked)}
+                className="w-4 h-4 rounded text-[#675137] focus:ring-[#675137] border-stone-300"
+              />
+              <span>I am an existing customer</span>
+            </label>
+          )}
         </div>
 
-        <div className="p-2.5 rounded-xl bg-[#FAF8F5] border border-stone-200 text-[11px] text-stone-600 flex items-center gap-2">
-          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
-          <span>
-            Your starting date is set to your date of joining (<strong>{formatDateReadable(value.startDate)}</strong>), and your ending date is fixed for <strong>{currentPkg.durationMonths} {currentPkg.durationMonths === 1 ? 'Month' : 'Months'}</strong>.
-          </span>
-        </div>
+        {value.isExistingCustomer ? (
+          <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-900 flex items-start gap-2">
+            <Info className="w-3.5 h-3.5 text-amber-700 shrink-0 mt-0.5" />
+            <span>
+              <strong>Existing Member Setup:</strong> Since you already attend the studio, you can specify your original joining date and current package expiry date.
+            </span>
+          </div>
+        ) : (
+          <div className="p-2.5 rounded-xl bg-[#FAF8F5] border border-stone-200 text-[11px] text-stone-600 flex items-center gap-2">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+            <span>
+              Your starting date defaults to today (<strong>{formatDateReadable(value.startDate)}</strong>), and your ending date is auto-calculated for <strong>{currentPkg.durationMonths} {currentPkg.durationMonths === 1 ? 'Month' : 'Months'}</strong>.
+            </span>
+          </div>
+        )}
 
-        {/* Date Display Grid (Read-only / Locked) */}
+        {/* Date Inputs Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
           {/* Starting Date */}
           <div>
             <label className="block text-xs font-bold text-stone-700 mb-1 flex items-center gap-1">
               <span>Starting Date (Date of Joining)</span>
-              <Lock className="w-3 h-3 text-stone-400" />
+              {!value.isExistingCustomer && <Lock className="w-3 h-3 text-stone-400" />}
             </label>
-            <div className="w-full px-3 py-2.5 bg-stone-100/90 border border-stone-200 rounded-xl text-xs font-semibold text-stone-800 flex items-center justify-between select-none">
-              <span>{formatDateReadable(value.startDate)}</span>
-              <span className="text-[10px] text-stone-500 font-normal">Day 1</span>
-            </div>
+            {value.isExistingCustomer ? (
+              <input
+                type="date"
+                value={value.startDate}
+                onChange={e => handleStartDateChange(e.target.value)}
+                className="w-full px-3 py-2 bg-[#FAF8F5] border border-stone-200 rounded-xl text-xs font-medium text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#675137]/30"
+              />
+            ) : (
+              <div className="w-full px-3 py-2.5 bg-stone-100/90 border border-stone-200 rounded-xl text-xs font-semibold text-stone-800 flex items-center justify-between select-none">
+                <span>{formatDateReadable(value.startDate)}</span>
+                <span className="text-[10px] text-stone-500 font-normal">Day 1</span>
+              </div>
+            )}
+            <p className="text-[10px] text-stone-500 mt-1">
+              {formatDateReadable(value.startDate)}
+            </p>
           </div>
 
           {/* Ending Date */}
           <div>
-            <label className="block text-xs font-bold text-stone-700 mb-1 flex items-center gap-1">
-              <span>Ending Date (Package Expiry)</span>
-              <Lock className="w-3 h-3 text-stone-400" />
-            </label>
-            <div className="w-full px-3 py-2.5 bg-stone-100/90 border border-stone-200 rounded-xl text-xs font-semibold text-stone-800 flex items-center justify-between select-none">
-              <span>{formatDateReadable(value.endDate)}</span>
-              <span className="text-[10px] text-stone-500 font-normal">
-                +{currentPkg.durationMonths} {currentPkg.durationMonths === 1 ? 'Month' : 'Months'}
-              </span>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-bold text-stone-700 flex items-center gap-1">
+                <span>Ending Date (Package Expiry)</span>
+                {!value.isExistingCustomer && <Lock className="w-3 h-3 text-stone-400" />}
+              </label>
+              {value.isExistingCustomer && (
+                <button
+                  type="button"
+                  onClick={handleResetAutoDates}
+                  className="text-[10px] font-semibold text-[#675137] hover:underline flex items-center gap-0.5"
+                  title="Auto-calculate ending date from starting date"
+                >
+                  <RotateCcw className="w-2.5 h-2.5" />
+                  <span>Auto-calculate</span>
+                </button>
+              )}
             </div>
+
+            {value.isExistingCustomer ? (
+              <input
+                type="date"
+                value={value.endDate}
+                min={value.startDate}
+                onChange={e => handleEndDateChange(e.target.value)}
+                className="w-full px-3 py-2 bg-[#FAF8F5] border border-stone-200 rounded-xl text-xs font-medium text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#675137]/30"
+              />
+            ) : (
+              <div className="w-full px-3 py-2.5 bg-stone-100/90 border border-stone-200 rounded-xl text-xs font-semibold text-stone-800 flex items-center justify-between select-none">
+                <span>{formatDateReadable(value.endDate)}</span>
+                <span className="text-[10px] text-stone-500 font-normal">
+                  +{currentPkg.durationMonths} {currentPkg.durationMonths === 1 ? 'Month' : 'Months'}
+                </span>
+              </div>
+            )}
+            <p className="text-[10px] text-stone-500 mt-1">
+              {formatDateReadable(value.endDate)}
+            </p>
           </div>
         </div>
       </div>
