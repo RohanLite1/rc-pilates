@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 import { StudioLogo } from '../common/StudioLogo';
 import { initGoogleAuth, triggerGoogleSignIn } from '../../services/googleAuthService';
+import { auth, googleProvider } from '../../services/firebaseConfig';
+import { signInWithPopup } from 'firebase/auth';
 
 export const LoginModal: React.FC = () => {
   const { loginWithGoogle } = useApp();
@@ -16,6 +18,7 @@ export const LoginModal: React.FC = () => {
   const [showGoogleDialog, setShowGoogleDialog] = useState<boolean>(false);
   const [googleEmailInput, setGoogleEmailInput] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState<string>('');
+  const [isSigningIn, setIsSigningIn] = useState<boolean>(false);
 
   // Initialize official Google Identity Services
   useEffect(() => {
@@ -30,12 +33,37 @@ export const LoginModal: React.FC = () => {
     );
   }, []);
 
-  const handleGoogleClick = () => {
+  const handleGoogleClick = async () => {
     setErrorMsg('');
+    setIsSigningIn(true);
+
+    try {
+      // 1. Try Firebase Google Auth popup (works seamlessly on modern web, Safari, Chrome)
+      const res = await signInWithPopup(auth, googleProvider);
+      if (res.user && res.user.email) {
+        loginWithGoogle(
+          res.user.email,
+          res.user.displayName || undefined,
+          res.user.photoURL || undefined
+        );
+        setShowGoogleDialog(false);
+        setIsSigningIn(false);
+        return;
+      }
+    } catch (fbErr: any) {
+      console.warn('Firebase Google Auth error/fallback:', fbErr?.code || fbErr);
+      if (fbErr?.code === 'auth/popup-closed-by-user') {
+        setIsSigningIn(false);
+        return;
+      }
+    }
+
+    // 2. Fallback to Google Identity Services / Account Picker Dialog
     const triggered = triggerGoogleSignIn();
     if (!triggered) {
       setShowGoogleDialog(true);
     }
+    setIsSigningIn(false);
   };
 
   const handleGoogleSelect = (email: string, name?: string) => {
@@ -120,7 +148,8 @@ export const LoginModal: React.FC = () => {
             <button
               type="button"
               onClick={handleGoogleClick}
-              className="w-full flex items-center justify-center gap-3 py-3.5 px-4 rounded-2xl bg-white hover:bg-stone-50 border-2 border-stone-200 hover:border-[#675137]/30 shadow-md text-sm font-bold text-stone-800 transition-all active:scale-[0.99] group"
+              disabled={isSigningIn}
+              className="w-full flex items-center justify-center gap-3 py-3.5 px-4 rounded-2xl bg-white hover:bg-stone-50 border-2 border-stone-200 hover:border-[#675137]/30 shadow-md text-sm font-bold text-stone-800 transition-all active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed group"
             >
               {/* Google G Icon */}
               <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
@@ -141,7 +170,7 @@ export const LoginModal: React.FC = () => {
                   d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.36 0 3.26 2.64 1.24 6.58l4.04 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
                 />
               </svg>
-              <span>Continue with Google</span>
+              <span>{isSigningIn ? 'Connecting to Google...' : 'Continue with Google'}</span>
             </button>
           </div>
 

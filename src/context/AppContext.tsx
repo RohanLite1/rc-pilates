@@ -23,6 +23,17 @@ import {
   type StudioPackageId
 } from '../data/packagePlans';
 import { setupNotificationListeners } from '../services/notificationService';
+import {
+  subscribeToClients,
+  saveClientToFirestore,
+  syncAllClientsToFirestore,
+  deleteClientFromFirestore,
+  subscribeToSessions,
+  saveSessionToFirestore,
+  syncAllSessionsToFirestore,
+  subscribeToStudioConfig,
+  saveStudioConfigToFirestore
+} from '../services/firestoreService';
 
 export interface CreateSessionOptions extends Partial<SessionTimeslot> {
   id?: string;
@@ -174,15 +185,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [batchSlots]);
 
   const toggleBatchSlotAvailability = (slotId: string) => {
-    setBatchSlots(prev =>
-      prev.map(slot => (slot.id === slotId ? { ...slot, isAvailable: !slot.isAvailable } : slot))
-    );
+    setBatchSlots(prev => {
+      const updated = prev.map(slot => (slot.id === slotId ? { ...slot, isAvailable: !slot.isAvailable } : slot));
+      saveStudioConfigToFirestore({ batchSlots: updated, studioTimeslots, instructorWhitelist });
+      return updated;
+    });
   };
 
   const setBatchSlotAvailability = (slotId: string, isAvailable: boolean) => {
-    setBatchSlots(prev =>
-      prev.map(slot => (slot.id === slotId ? { ...slot, isAvailable } : slot))
-    );
+    setBatchSlots(prev => {
+      const updated = prev.map(slot => (slot.id === slotId ? { ...slot, isAvailable } : slot));
+      saveStudioConfigToFirestore({ batchSlots: updated, studioTimeslots, instructorWhitelist });
+      return updated;
+    });
   };
 
   // Studio Timeslots state (customizable by instructor, visible to clients)
@@ -223,6 +238,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       } catch (e) {
         console.error(e);
       }
+      saveStudioConfigToFirestore({ batchSlots, studioTimeslots: updated, instructorWhitelist });
       return updated;
     });
   };
@@ -235,6 +251,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       } catch (e) {
         console.error(e);
       }
+      saveStudioConfigToFirestore({ batchSlots, studioTimeslots: updated, instructorWhitelist });
       return updated;
     });
   };
@@ -295,7 +312,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     // Remove from client list if this email was previously registered as a client
     setClients(prev => prev.filter(c => c.email.toLowerCase() !== clean));
-    setInstructorWhitelist(prev => [...prev, clean]);
+    const nextWhitelist = [...instructorWhitelist, clean];
+    setInstructorWhitelist(nextWhitelist);
+    saveStudioConfigToFirestore({
+      batchSlots,
+      studioTimeslots,
+      instructorWhitelist: nextWhitelist
+    });
     return { success: true, message: `Successfully whitelisted ${clean} as an Instructor.` };
   };
 
@@ -304,7 +327,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (clean === 'rohan.sethi12126@gmail.com' || clean === 'radhika.instructor@rcpilates.com') {
       return { success: false, message: 'Primary studio administrator cannot be removed.' };
     }
-    setInstructorWhitelist(prev => prev.filter(e => e.toLowerCase() !== clean));
+    const nextWhitelist = instructorWhitelist.filter(e => e.toLowerCase() !== clean);
+    setInstructorWhitelist(nextWhitelist);
+    saveStudioConfigToFirestore({
+      batchSlots,
+      studioTimeslots,
+      instructorWhitelist: nextWhitelist
+    });
     return { success: true, message: `Removed ${clean} from instructor whitelist.` };
   };
 
@@ -314,6 +343,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const targetEmail = target?.email || target?.displayName || 'Client';
     setClients(prev => prev.filter(c => c.id !== clientId));
     setSessions(prev => prev.filter(s => s.clientId !== clientId));
+    deleteClientFromFirestore(clientId);
     if (currentUser?.id === clientId) {
       setCurrentUser(null);
     }
@@ -407,6 +437,84 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     }
   }, [clients]);
+
+  // Real-time Firestore Synchronization across devices (iPhone, Android, Web)
+  useEffect(() => {
+    let clientsReceived = false;
+    let sessionsReceived = false;
+
+    // 1. Subscribe to live Firestore client profiles
+    const unsubClients = subscribeToClients(
+      incomingClients => {
+        if (incomingClients && incomingClients.length > 0) {
+          clientsReceived = true;
+          setClients(incomingClients);
+          // Keep currentUser in sync if client
+          setCurrentUser(prevUser => {
+            if (!prevUser || prevUser.role !== 'client') return prevUser;
+            const match = incomingClients.find(c => c.id === prevUser.id);
+            return match || prevUser;
+          });
+          // Keep instructor's selected client in sync
+          setSelectedClient(prevSel => {
+            if (!prevSel) return incomingClients[0] || null;
+            const match = incomingClients.find(c => c.id === prevSel.id);
+            return match || incomingClients[0] || null;
+          });
+        }
+      },
+      err => console.warn('Firestore clients sync error:', err)
+    );
+
+    // 2. Subscribe to live Firestore sessions
+    const unsubSessions = subscribeToSessions(
+      incomingSessions => {
+        if (incomingSessions && incomingSessions.length > 0) {
+          sessionsReceived = true;
+          setSessions(incomingSessions);
+        }
+      },
+      err => console.warn('Firestore sessions sync error:', err)
+    );
+
+    // 3. Subscribe to live Studio configuration (slots, availability, whitelist)
+    const unsubConfig = subscribeToStudioConfig(
+      config => {
+        if (config.batchSlots && config.batchSlots.length > 0) {
+          setBatchSlots(config.batchSlots);
+        }
+        if (config.studioTimeslots && config.studioTimeslots.length > 0) {
+          setStudioTimeslots(config.studioTimeslots);
+        }
+        if (config.instructorWhitelist && config.instructorWhitelist.length > 0) {
+          setInstructorWhitelist(config.instructorWhitelist);
+        }
+      },
+      err => console.warn('Firestore config sync error:', err)
+    );
+
+    // Initial cloud seed if Firestore database is fresh
+    const seedTimer = setTimeout(() => {
+      if (!clientsReceived && clients.length > 0) {
+        syncAllClientsToFirestore(clients);
+      }
+      if (!sessionsReceived && sessions.length > 0) {
+        syncAllSessionsToFirestore(sessions);
+      }
+      saveStudioConfigToFirestore({
+        batchSlots,
+        studioTimeslots,
+        instructorWhitelist
+      });
+    }, 2500);
+
+    return () => {
+      unsubClients();
+      unsubSessions();
+      unsubConfig();
+      clearTimeout(seedTimer);
+    };
+  }, []);
 
   // Google Sign-In with Instructor Whitelisting & Profile Photo
   const loginWithGoogle = (email: string, name?: string, avatarUrl?: string) => {
@@ -646,6 +754,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     setCurrentUser(updatedUser);
     setClients(prev => prev.map(c => (c.id === updatedUser.id ? updatedUser : c)));
+    saveClientToFirestore(updatedUser);
+    if (newClientSessions.length > 0) {
+      syncAllSessionsToFirestore(newClientSessions);
+    }
   };
 
   // Username and Password Login
@@ -922,6 +1034,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             ...newClientSessions
           ]);
 
+          saveClientToFirestore(updated);
+          if (newClientSessions.length > 0) {
+            syncAllSessionsToFirestore(newClientSessions);
+          }
+
           if (currentUser?.id === clientId) {
             setCurrentUser(updated);
           }
@@ -952,12 +1069,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setSessions(prev =>
       prev.map(s => {
         if (s.id === sessionId) {
-          return {
+          const updated = {
             ...s,
             status,
             markedAt: status === 'scheduled' ? undefined : (s.markedAt || timeStr),
             notes: notes !== undefined ? notes : s.notes
           };
+          saveSessionToFirestore(updated);
+          return updated;
         }
         return s;
       })
@@ -972,7 +1091,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setSessions(prev =>
       prev.map(s => {
         if (s.id === sessionId) {
-          return {
+          const updated: SessionTimeslot = {
             ...s,
             clientConfirmation: confirmation,
             clientConfirmedAt: `${timeStr} (via notification)`,
@@ -982,6 +1101,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 ? 'Client marked "Not attending" on 45m reminder. Instructor notified in advance.'
                 : 'Client confirmed "Attending" on 45m reminder.'
           };
+          saveSessionToFirestore(updated);
+          return updated;
         }
         return s;
       })
@@ -1178,7 +1299,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setClients(prev =>
       prev.map(c => {
         if (c.id === clientId) {
-          return { ...c, dietPlan: diet };
+          const updated = { ...c, dietPlan: diet };
+          saveClientToFirestore(updated);
+          return updated;
         }
         return c;
       })
@@ -1196,10 +1319,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setClients(prev =>
       prev.map(c => {
         if (c.id === clientId) {
-          return {
+          const updated = {
             ...c,
             importedDietPdf: pdfData || undefined
           };
+          saveClientToFirestore(updated);
+          return updated;
         }
         return c;
       })
@@ -1229,7 +1354,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             packageTitle: c.membershipTier || 'Reformer Unlimited',
             dueDate: dueDate || 'Nov 10, 2026'
           };
-          return {
+          const updated = {
             ...c,
             feeRecord: {
               ...existing,
@@ -1242,6 +1367,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                   : existing.lastPaidDate
             }
           };
+          saveClientToFirestore(updated);
+          return updated;
         }
         return c;
       })
