@@ -57,7 +57,8 @@ export const ClientDossierModal: React.FC<ClientDossierModalProps> = ({
     createOrUpdateSession,
     updateClientDietPlan,
     switchUser,
-    importDietPlanPdf
+    importDietPlanPdf,
+    deleteClient
   } = useApp();
 
   const [activeMainTab, setActiveMainTab] = useState<'diet' | 'attendance'>(initialTab);
@@ -65,6 +66,7 @@ export const ClientDossierModal: React.FC<ClientDossierModalProps> = ({
   const [editingDayNum, setEditingDayNum] = useState<number>(1);
   const [savedFeedback, setSavedFeedback] = useState<string>('');
   const [pdfNotes, setPdfNotes] = useState<string>(client.importedDietPdf?.notes || '');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<boolean>(false);
   const pdfFileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Local state clone for Diet Plan
@@ -317,6 +319,16 @@ export const ClientDossierModal: React.FC<ClientDossierModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowDeleteConfirm(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold transition-colors"
+              title="Permanently remove this client account"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Delete Member</span>
+            </button>
+
             <button
               onClick={() => {
                 onClose();
@@ -1306,6 +1318,54 @@ export const ClientDossierModal: React.FC<ClientDossierModalProps> = ({
             </div>
           )}
         </div>
+
+        {/* Delete Confirmation Overlay Dialog */}
+        {showDeleteConfirm && (
+          <div className="absolute inset-0 z-50 bg-stone-900/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150">
+            <div className="bg-white rounded-3xl p-6 max-w-sm w-full border border-stone-200 shadow-2xl text-center space-y-4">
+              <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center mx-auto">
+                <Trash2 className="w-6 h-6" />
+              </div>
+
+              <div>
+                <h3 className="font-serif font-bold text-lg text-stone-900">
+                  Delete Client Account?
+                </h3>
+                <p className="text-xs text-stone-600 mt-2 leading-relaxed">
+                  Are you sure you want to permanently delete{' '}
+                  <strong className="text-stone-900">{client.displayName}</strong>?
+                </p>
+                <div className="mt-2.5 p-2 rounded-xl bg-stone-50 border border-stone-200 text-[11px] text-stone-600 font-mono">
+                  {client.email}
+                </div>
+                <p className="text-[11px] text-rose-700 font-semibold mt-2 bg-rose-50 p-2 rounded-xl border border-rose-200">
+                  All scheduled classes, attendance records &amp; diet plan will be erased.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="py-2.5 px-4 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    deleteClient(client.id);
+                    setShowDeleteConfirm(false);
+                    onClose();
+                  }}
+                  className="py-2.5 px-4 rounded-xl bg-rose-700 hover:bg-rose-800 text-white font-bold text-xs shadow-md transition-colors"
+                >
+                  Yes, Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

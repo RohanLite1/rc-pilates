@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import type { UserProfile } from '../../types';
-import { Search, ChevronRight, Plus, ExternalLink, Apple, CreditCard, Send, Check, FileText } from 'lucide-react';
+import { Search, ChevronRight, Plus, ExternalLink, Apple, CreditCard, Send, Check, FileText, Trash2, AlertTriangle, ShieldAlert } from 'lucide-react';
 import { InstructorAlignmentDrawing, BotanicalBranchDrawing } from '../common/StudioDrawings';
 import { StudioLogo } from '../common/StudioLogo';
 
@@ -10,9 +10,10 @@ interface InstructorClientsViewProps {
 }
 
 export const InstructorClientsView: React.FC<InstructorClientsViewProps> = ({ onOpenDossier }) => {
-  const { clients, switchUser, registerUser, updateClientFeeStatus, sendFeeReminder } = useApp();
+  const { clients, switchUser, registerUser, updateClientFeeStatus, sendFeeReminder, deleteClient } = useApp();
   const [search, setSearch] = useState<string>('');
   const [showAddClient, setShowAddClient] = useState<boolean>(false);
+  const [clientToDelete, setClientToDelete] = useState<UserProfile | null>(null);
   const [newName, setNewName] = useState<string>('');
   const [newEmail, setNewEmail] = useState<string>('');
   const [feeToast, setFeeToast] = useState<string>('');
@@ -200,8 +201,8 @@ export const InstructorClientsView: React.FC<InstructorClientsViewProps> = ({ on
               </div>
             </div>
 
-            {/* Action Buttons: 3 clean actions */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 border-t border-stone-100 dark:border-stone-800 text-xs">
+            {/* Action Buttons: 4 clean actions */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 border-t border-stone-100 dark:border-stone-800 text-xs">
               <button
                 type="button"
                 onClick={() => switchUser(c)}
@@ -209,7 +210,7 @@ export const InstructorClientsView: React.FC<InstructorClientsViewProps> = ({ on
                 title="Switch and view app as this client"
               >
                 <ExternalLink className="w-3.5 h-3.5 text-stone-400" />
-                <span>View as Client</span>
+                <span>View</span>
               </button>
 
               <button
@@ -218,7 +219,7 @@ export const InstructorClientsView: React.FC<InstructorClientsViewProps> = ({ on
                 className="py-2.5 px-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/70 hover:bg-emerald-100 text-emerald-900 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-800 font-bold flex items-center justify-center gap-1.5 transition-colors"
               >
                 <FileText className="w-3.5 h-3.5 text-emerald-800" />
-                <span>Diet &amp; PDF</span>
+                <span>Diet</span>
               </button>
 
               <button
@@ -226,8 +227,18 @@ export const InstructorClientsView: React.FC<InstructorClientsViewProps> = ({ on
                 onClick={() => onOpenDossier(c, 'attendance')}
                 className="py-2.5 px-2 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white font-bold shadow-xs flex items-center justify-center gap-1.5 transition-all active:scale-95"
               >
-                <span>Edit Schedule</span>
+                <span>Schedule</span>
                 <ChevronRight className="w-4 h-4" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setClientToDelete(c)}
+                className="py-2.5 px-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold flex items-center justify-center gap-1.5 transition-colors"
+                title="Delete this client account"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Remove</span>
               </button>
             </div>
           </div>
@@ -305,6 +316,54 @@ export const InstructorClientsView: React.FC<InstructorClientsViewProps> = ({ on
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* Delete Confirmation Modal */}
+      {clientToDelete && (
+        <div className="fixed inset-0 z-50 bg-stone-900/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl p-6 max-w-sm w-full border border-stone-200 shadow-2xl text-center space-y-4">
+            <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center mx-auto">
+              <AlertTriangle className="w-6 h-6" />
+            </div>
+
+            <div>
+              <h3 className="font-serif font-bold text-lg text-stone-900">
+                Delete Client Account?
+              </h3>
+              <p className="text-xs text-stone-600 mt-2 leading-relaxed">
+                Permanently delete <strong className="text-stone-900">{clientToDelete.displayName}</strong>?
+              </p>
+              <div className="mt-2.5 p-2 rounded-xl bg-stone-50 border border-stone-200 text-[11px] text-stone-600 font-mono">
+                {clientToDelete.email}
+              </div>
+              <p className="text-[11px] text-rose-700 font-semibold mt-2.5 bg-rose-50 p-2 rounded-xl border border-rose-200 flex items-center justify-center gap-1">
+                <ShieldAlert className="w-3.5 h-3.5 shrink-0" />
+                <span>All scheduled classes, attendance records &amp; diet plan will be erased.</span>
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setClientToDelete(null)}
+                className="py-2.5 px-4 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const res = deleteClient(clientToDelete.id);
+                  setClientToDelete(null);
+                  setFeeToast(res.message);
+                  setTimeout(() => setFeeToast(''), 3000);
+                }}
+                className="py-2.5 px-4 rounded-xl bg-rose-700 hover:bg-rose-800 text-white font-bold text-xs shadow-md transition-colors"
+              >
+                Yes, Delete
+              </button>
+            </div>
           </div>
         </div>
       )}

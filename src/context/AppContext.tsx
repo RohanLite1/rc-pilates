@@ -64,6 +64,12 @@ interface AppContextType {
   updateClientFeeStatus: (clientId: string, status: 'paid' | 'pending', amount?: string, dueDate?: string) => void;
   sendFeeReminder: (clientId: string) => void;
 
+  // Instructor Whitelist & Client Account Management
+  instructorWhitelist: string[];
+  addInstructorWhitelist: (email: string) => { success: boolean; message: string };
+  removeInstructorWhitelist: (email: string) => { success: boolean; message: string };
+  deleteClient: (clientId: string) => { success: boolean; message: string };
+
   // Theme & Appearance
   theme: AppTheme;
   setTheme: (theme: AppTheme) => void;
@@ -112,6 +118,7 @@ const STORAGE_KEY_CURRENT_USER = 'rc_pilates_current_user_v4';
 const STORAGE_KEY_THEME = 'rc_pilates_theme_v1';
 const STORAGE_KEY_TIMESLOTS = 'rc_pilates_studio_timeslots_v2';
 const STORAGE_KEY_BATCH_SLOTS = 'rc_pilates_batch_slots_v1';
+const STORAGE_KEY_INSTRUCTOR_WHITELIST = 'rc_pilates_instructor_whitelist_v1';
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
@@ -232,6 +239,65 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return INITIAL_TIMESLOTS;
   });
 
+  // Instructor Whitelist state (persisted across sessions)
+  const [instructorWhitelist, setInstructorWhitelist] = useState<string[]>(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY_INSTRUCTOR_WHITELIST);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    return INSTRUCTOR_WHITELISTED_EMAILS;
+  });
+
+  // Persist instructor whitelist
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_INSTRUCTOR_WHITELIST, JSON.stringify(instructorWhitelist));
+    } catch (e) {
+      console.error(e);
+    }
+  }, [instructorWhitelist]);
+
+  // Whitelist management
+  const addInstructorWhitelist = (email: string) => {
+    const clean = email.toLowerCase().trim();
+    if (!clean || !clean.includes('@') || !clean.includes('.')) {
+      return { success: false, message: 'Please enter a valid Gmail / email address.' };
+    }
+    if (instructorWhitelist.some(e => e.toLowerCase() === clean)) {
+      return { success: false, message: `${clean} is already whitelisted as an Instructor.` };
+    }
+    // Remove from client list if this email was previously registered as a client
+    setClients(prev => prev.filter(c => c.email.toLowerCase() !== clean));
+    setInstructorWhitelist(prev => [...prev, clean]);
+    return { success: true, message: `Successfully whitelisted ${clean} as an Instructor.` };
+  };
+
+  const removeInstructorWhitelist = (email: string) => {
+    const clean = email.toLowerCase().trim();
+    if (clean === 'rohan.sethi12126@gmail.com' || clean === 'radhika.instructor@rcpilates.com') {
+      return { success: false, message: 'Primary studio administrator cannot be removed.' };
+    }
+    setInstructorWhitelist(prev => prev.filter(e => e.toLowerCase() !== clean));
+    return { success: true, message: `Removed ${clean} from instructor whitelist.` };
+  };
+
+  // Delete client account and clean up their sessions and credentials
+  const deleteClient = (clientId: string) => {
+    const target = clients.find(c => c.id === clientId);
+    const targetEmail = target?.email || target?.displayName || 'Client';
+    setClients(prev => prev.filter(c => c.id !== clientId));
+    setSessions(prev => prev.filter(s => s.clientId !== clientId));
+    if (currentUser?.id === clientId) {
+      setCurrentUser(null);
+    }
+    return { success: true, message: `Successfully removed client ${targetEmail}.` };
+  };
+
   // Current logged in user (defaults to null so user sees the Landing/Login page on first open)
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => {
     try {
@@ -324,17 +390,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const loginWithGoogle = (email: string, name?: string, avatarUrl?: string) => {
     const cleanEmail = email.toLowerCase().trim();
 
-    // Whitelist check: rohan.sethi12126@gmail.com is granted Master Instructor access
+    // Whitelist check: rohan.sethi12126@gmail.com, radhika, or any whitelisted instructor email
     const isWhitelistedInstructor =
       cleanEmail === 'rohan.sethi12126@gmail.com' ||
-      INSTRUCTOR_WHITELISTED_EMAILS.some(e => e.toLowerCase() === cleanEmail) ||
-      cleanEmail === INITIAL_INSTRUCTOR.email.toLowerCase();
+      cleanEmail === INITIAL_INSTRUCTOR.email.toLowerCase() ||
+      instructorWhitelist.some(e => e.toLowerCase() === cleanEmail);
 
     if (isWhitelistedInstructor) {
+      const instructorDisplayName =
+        name ||
+        (cleanEmail === 'rohan.sethi12126@gmail.com'
+          ? 'Rohan Sethi'
+          : cleanEmail === INITIAL_INSTRUCTOR.email.toLowerCase()
+          ? INITIAL_INSTRUCTOR.displayName
+          : cleanEmail.split('@')[0].replace('.', ' ').replace(/(^\w|\s\w)/g, m => m.toUpperCase()));
+
       const instructorUser: UserProfile = {
         ...INITIAL_INSTRUCTOR,
+        id: `instructor-${cleanEmail.replace(/[^a-zA-Z0-9]/g, '_')}`,
+        displayName: instructorDisplayName,
         email: cleanEmail,
-        avatarUrl: avatarUrl || INITIAL_INSTRUCTOR.avatarUrl
+        username: cleanEmail.split('@')[0],
+        avatarUrl: avatarUrl || INITIAL_INSTRUCTOR.avatarUrl,
+        role: 'instructor',
+        membershipTier:
+          cleanEmail === 'rohan.sethi12126@gmail.com'
+            ? 'Master Studio Owner & Instructor'
+            : cleanEmail === INITIAL_INSTRUCTOR.email.toLowerCase()
+            ? 'Founder & Lead Instructor'
+            : 'Certified Studio Instructor'
       };
       setCurrentUser(instructorUser);
       setActiveTab('dashboard');
@@ -456,7 +540,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const isInstructorMatch =
       query === 'rohan.sethi12126@gmail.com' ||
       query === 'rohan_instructor' ||
-      INSTRUCTOR_WHITELISTED_EMAILS.some(e => e.toLowerCase() === query) ||
+      instructorWhitelist.some(e => e.toLowerCase() === query) ||
       query === INITIAL_INSTRUCTOR.username.toLowerCase() ||
       query === INITIAL_INSTRUCTOR.email.toLowerCase() ||
       query === 'radhika' ||
@@ -464,7 +548,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       query === 'radhika_instructor';
 
     if (isInstructorMatch && (password === 'password123' || password.length >= 4)) {
-      setCurrentUser(INITIAL_INSTRUCTOR);
+      const instructorDisplayName =
+        query === 'rohan.sethi12126@gmail.com' || query === 'rohan_instructor'
+          ? 'Rohan Sethi'
+          : query.includes('@')
+          ? query.split('@')[0].replace('.', ' ').replace(/(^\w|\s\w)/g, m => m.toUpperCase())
+          : INITIAL_INSTRUCTOR.displayName;
+
+      const instructorUser: UserProfile = {
+        ...INITIAL_INSTRUCTOR,
+        displayName: instructorDisplayName,
+        email: query.includes('@') ? query : INITIAL_INSTRUCTOR.email,
+        username: query.includes('@') ? query.split('@')[0] : INITIAL_INSTRUCTOR.username,
+        role: 'instructor'
+      };
+      setCurrentUser(instructorUser);
       setActiveTab('dashboard');
       return { success: true };
     }
@@ -896,10 +994,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.removeItem(STORAGE_KEY_THEME);
     localStorage.removeItem(STORAGE_KEY_BATCH_SLOTS);
     localStorage.removeItem(STORAGE_KEY_TIMESLOTS);
+    localStorage.removeItem(STORAGE_KEY_INSTRUCTOR_WHITELIST);
     setClients(INITIAL_CLIENTS);
     setSessions(INITIAL_TIMESLOTS);
     setBatchSlots(INITIAL_BATCH_SLOTS);
     setStudioTimeslots(AVAILABLE_STUDIO_TIMESLOTS);
+    setInstructorWhitelist(INSTRUCTOR_WHITELISTED_EMAILS);
     setCurrentUser(INITIAL_INSTRUCTOR);
     setSelectedClient(INITIAL_CLIENTS[0]);
   };
@@ -930,6 +1030,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         removeStudioTimeslot,
         updateClientFeeStatus,
         sendFeeReminder,
+        instructorWhitelist,
+        addInstructorWhitelist,
+        removeInstructorWhitelist,
+        deleteClient,
         theme,
         setTheme,
         loginWithGoogle,
