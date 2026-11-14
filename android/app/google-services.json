@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "1092910034933",
+    "project_id": "analog-context-514705-i4",
+    "storage_bucket": "analog-context-514705-i4.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1092910034933:android:3814b07879b1871ddbbabc",
+        "android_client_info": {
+          "package_name": "com.aurapilates.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1092910034933-60fqa7tlq68qd7pblr4jrg93a8ha046c.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAODFck5caVokABlztBg2Vbx5eRDGHm7ls"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1092910034933-60fqa7tlq68qd7pblr4jrg93a8ha046c.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
