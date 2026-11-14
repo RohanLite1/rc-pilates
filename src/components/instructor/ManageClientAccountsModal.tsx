@@ -255,3 +255,4 @@ export const ManageClientAccountsModal: React.FC<ManageClientAccountsModalProps>
     </div>
   );
 };
+

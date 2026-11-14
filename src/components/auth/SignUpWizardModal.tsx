@@ -19,6 +19,11 @@ import {
   RefreshCw,
   X
 } from 'lucide-react';
+import {
+  PackageAndScheduleSelector,
+  type PackageSelectionState
+} from '../common/PackageAndScheduleSelector';
+import { getTodayDateString, calculateEndDateFromStart } from '../../data/packagePlans';
 
 interface SignUpWizardModalProps {
   onCancel: () => void;
@@ -36,6 +41,17 @@ export const SignUpWizardModal: React.FC<SignUpWizardModalProps> = ({ onCancel }
   const [email, setEmail] = useState<string>('');
   const [phone, setPhone] = useState<string>('');
   const [password, setPassword] = useState<string>('');
+
+  // Step 4: Package & Schedule Selection
+  const initialStartDate = getTodayDateString();
+  const initialEndDate = calculateEndDateFromStart(initialStartDate, 1);
+  const [packageSelection, setPackageSelection] = useState<PackageSelectionState>({
+    packageChoice: '1_month',
+    startDate: initialStartDate,
+    endDate: initialEndDate,
+    preferredTimeSlot: '08:00 AM - 09:00 AM',
+    isExistingCustomer: false
+  });
 
   // Live in-app Camera stream states
   const [isCameraActive, setIsCameraActive] = useState<boolean>(false);
@@ -222,7 +238,7 @@ export const SignUpWizardModal: React.FC<SignUpWizardModalProps> = ({ onCancel }
 
   const handleNext = () => {
     if (validateStep(currentStep)) {
-      if (currentStep < 3) {
+      if (currentStep < 4) {
         setCurrentStep(prev => prev + 1);
       } else {
         handleSubmit();
@@ -250,7 +266,12 @@ export const SignUpWizardModal: React.FC<SignUpWizardModalProps> = ({ onCancel }
       gender,
       fitnessGoal,
       experienceLevel,
-      dietaryPreference
+      dietaryPreference,
+      packageChoice: packageSelection.packageChoice,
+      startDate: packageSelection.startDate,
+      endDate: packageSelection.endDate,
+      preferredTimeSlot: packageSelection.preferredTimeSlot,
+      isExistingCustomer: packageSelection.isExistingCustomer
     });
   };
 
@@ -270,15 +291,16 @@ export const SignUpWizardModal: React.FC<SignUpWizardModalProps> = ({ onCancel }
               </div>
             </div>
             <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[#F2E9DC] text-[#7B6244] border border-[#E6D7C3]">
-              Step {currentStep} of 3
+              Step {currentStep} of 4
             </span>
           </div>
 
           {/* Stepper Progress Bar */}
-          <div className="grid grid-cols-3 gap-2 pt-1">
+          <div className="grid grid-cols-4 gap-2 pt-1">
             <div className={`h-1.5 rounded-full transition-colors ${currentStep >= 1 ? 'bg-[#675137]' : 'bg-[#EAE1D4]'}`} />
             <div className={`h-1.5 rounded-full transition-colors ${currentStep >= 2 ? 'bg-[#675137]' : 'bg-[#EAE1D4]'}`} />
             <div className={`h-1.5 rounded-full transition-colors ${currentStep >= 3 ? 'bg-[#675137]' : 'bg-[#EAE1D4]'}`} />
+            <div className={`h-1.5 rounded-full transition-colors ${currentStep >= 4 ? 'bg-[#675137]' : 'bg-[#EAE1D4]'}`} />
           </div>
         </div>
 
@@ -624,6 +646,19 @@ export const SignUpWizardModal: React.FC<SignUpWizardModalProps> = ({ onCancel }
               </div>
             </div>
           )}
+
+          {/* ═══════════════════════════════════════════════════════════
+              STEP 4: PACKAGE, DATES & PREFERRED TIMESLOT SELECTION
+              ═══════════════════════════════════════════════════════════ */}
+          {currentStep === 4 && (
+            <div className="space-y-4 animate-in fade-in duration-150">
+              <PackageAndScheduleSelector
+                value={packageSelection}
+                onChange={setPackageSelection}
+                showExistingCustomerToggle={true}
+              />
+            </div>
+          )}
         </div>
 
         {/* ═══════════════════════════════════════════════════════════
@@ -646,7 +681,7 @@ export const SignUpWizardModal: React.FC<SignUpWizardModalProps> = ({ onCancel }
             onClick={handleNext}
             className="flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-[#675137] hover:bg-[#52402B] text-white font-bold text-xs shadow-md transition-all active:scale-95"
           >
-            <span>{currentStep === 3 ? 'Complete Setup' : 'Next'}</span>
+            <span>{currentStep === 4 ? 'Create Account & Enter Studio' : 'Next'}</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>

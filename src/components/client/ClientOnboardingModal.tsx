@@ -15,6 +15,11 @@ import {
   Calendar
 } from 'lucide-react';
 import { StudioLogo } from '../common/StudioLogo';
+import {
+  PackageAndScheduleSelector,
+  type PackageSelectionState
+} from '../common/PackageAndScheduleSelector';
+import { getTodayDateString, calculateEndDateFromStart } from '../../data/packagePlans';
 
 export const ClientOnboardingModal: React.FC = () => {
   const { currentUser, completeClientOnboarding } = useApp();
@@ -34,6 +39,17 @@ export const ClientOnboardingModal: React.FC = () => {
   const [fitnessGoal, setFitnessGoal] = useState<string>(currentUser?.fitnessGoal || 'Core Strength & Posture');
   const [experienceLevel, setExperienceLevel] = useState<string>(currentUser?.experienceLevel || 'Beginner (First Time on Reformer)');
   const [dietaryPreference, setDietaryPreference] = useState<string>(currentUser?.dietaryPreference || 'Vegetarian');
+
+  // Step 4: Package & Schedule Selection
+  const initialStartDate = currentUser?.startDate || getTodayDateString();
+  const initialEndDate = currentUser?.endDate || calculateEndDateFromStart(initialStartDate, 1);
+  const [packageSelection, setPackageSelection] = useState<PackageSelectionState>({
+    packageChoice: currentUser?.membershipTier?.includes('3 Month') ? '3_month' : '1_month',
+    startDate: initialStartDate,
+    endDate: initialEndDate,
+    preferredTimeSlot: currentUser?.preferredTimeSlot || '08:00 AM - 09:00 AM',
+    isExistingCustomer: currentUser?.isExistingCustomer || false
+  });
 
   const [isCameraActive, setIsCameraActive] = useState<boolean>(false);
   const [cameraLoading, setCameraLoading] = useState<boolean>(false);
@@ -176,7 +192,12 @@ export const ClientOnboardingModal: React.FC = () => {
       gender,
       fitnessGoal,
       experienceLevel,
-      dietaryPreference
+      dietaryPreference,
+      packageChoice: packageSelection.packageChoice,
+      startDate: packageSelection.startDate,
+      endDate: packageSelection.endDate,
+      preferredTimeSlot: packageSelection.preferredTimeSlot,
+      isExistingCustomer: packageSelection.isExistingCustomer
     });
   };
 
@@ -209,7 +230,7 @@ export const ClientOnboardingModal: React.FC = () => {
         <div className="p-5 bg-gradient-to-br from-[#FAF6F0] via-[#F4EFEA] to-[#EAE0D2] text-[#2D251E] border-b border-[#D5C0A4] relative overflow-hidden shrink-0">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#FAF6F0] text-[#675137] border border-[#D5C0A4]">
-              New Member Setup • Step {step} of 3
+              New Member Setup • Step {step} of 4
             </span>
             <div className="flex items-center gap-1.5">
               <StudioLogo size="xs" variant="transparent" />
@@ -225,10 +246,11 @@ export const ClientOnboardingModal: React.FC = () => {
           </p>
 
           {/* Stepper Progress Bar */}
-          <div className="grid grid-cols-3 gap-2 pt-3">
+          <div className="grid grid-cols-4 gap-2 pt-3">
             <div className={`h-1.5 rounded-full transition-colors ${step >= 1 ? 'bg-[#675137]' : 'bg-[#D5C0A4]/40'}`} />
             <div className={`h-1.5 rounded-full transition-colors ${step >= 2 ? 'bg-[#675137]' : 'bg-[#D5C0A4]/40'}`} />
             <div className={`h-1.5 rounded-full transition-colors ${step >= 3 ? 'bg-[#675137]' : 'bg-[#D5C0A4]/40'}`} />
+            <div className={`h-1.5 rounded-full transition-colors ${step >= 4 ? 'bg-[#675137]' : 'bg-[#D5C0A4]/40'}`} />
           </div>
         </div>
 
@@ -572,6 +594,17 @@ export const ClientOnboardingModal: React.FC = () => {
               </div>
             </div>
           )}
+
+          {/* STEP 4: Choose Studio Package & Timeslot */}
+          {step === 4 && (
+            <div className="space-y-4 animate-in fade-in duration-150">
+              <PackageAndScheduleSelector
+                value={packageSelection}
+                onChange={setPackageSelection}
+                showExistingCustomerToggle={true}
+              />
+            </div>
+          )}
         </div>
 
         {/* Modal Footer Controls */}
@@ -588,7 +621,7 @@ export const ClientOnboardingModal: React.FC = () => {
             <div />
           )}
 
-          {step < 3 ? (
+          {step < 4 ? (
             <button
               type="button"
               onClick={() => setStep(prev => prev + 1)}

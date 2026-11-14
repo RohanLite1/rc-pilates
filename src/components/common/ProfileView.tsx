@@ -15,25 +15,71 @@ import {
   Ruler,
   Activity,
   Palette,
-  CheckCircle2
+  CheckCircle2,
+  Clock,
+  X
 } from 'lucide-react';
 import { BotanicalBranchDrawing } from './StudioDrawings';
 import { NotificationDemoCard } from './NotificationDemoCard';
 import { StudioLogo } from './StudioLogo';
 import { ManageClientAccountsModal } from '../instructor/ManageClientAccountsModal';
 import { InstructorWhitelistModal } from '../instructor/InstructorWhitelistModal';
+import {
+  PackageAndScheduleSelector,
+  type PackageSelectionState
+} from './PackageAndScheduleSelector';
+import {
+  formatDateReadable,
+  getTodayDateString,
+  calculateEndDateFromStart
+} from '../../data/packagePlans';
 
 export const ProfileView: React.FC = () => {
-  const { currentUser, clients, instructorWhitelist, logout } = useApp();
+  const {
+    currentUser,
+    clients,
+    instructorWhitelist,
+    logout,
+    updateClientMembership
+  } = useApp();
   const [showManageClients, setShowManageClients] = useState<boolean>(false);
   const [showWhitelist, setShowWhitelist] = useState<boolean>(false);
+  const [showEditMembership, setShowEditMembership] = useState<boolean>(false);
+
+  const [editMembershipState, setEditMembershipState] = useState<PackageSelectionState>({
+    packageChoice: currentUser?.membershipTier?.includes('3 Month') ? '3_month' : '1_month',
+    startDate: currentUser?.startDate || currentUser?.feeRecord?.startDate || getTodayDateString(),
+    endDate:
+      currentUser?.endDate ||
+      currentUser?.feeRecord?.endDate ||
+      calculateEndDateFromStart(currentUser?.startDate || getTodayDateString(), 1),
+    preferredTimeSlot: currentUser?.preferredTimeSlot || '08:00 AM - 09:00 AM',
+    isExistingCustomer: true
+  });
+
+  const [updateToast, setUpdateToast] = useState<string>('');
 
   if (!currentUser) return null;
 
   const isInstructor = currentUser.role === 'instructor';
 
+  const handleSaveMembership = () => {
+    updateClientMembership(currentUser.id, editMembershipState);
+    setShowEditMembership(false);
+    setUpdateToast('Membership dates and package updated successfully!');
+    setTimeout(() => setUpdateToast(''), 3500);
+  };
+
   return (
     <div className="flex-1 p-4 pb-24 space-y-4">
+      {/* Success Feedback Toast */}
+      {updateToast && (
+        <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-2xl text-xs font-semibold flex items-center gap-2 animate-in fade-in shadow-sm">
+          <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
+          <span>{updateToast}</span>
+        </div>
+      )}
+
       {/* Profile Header Card */}
       <div className="bg-white rounded-3xl p-6 shadow-ambient border border-stone-200/80 text-center relative overflow-hidden transition-colors">
         <div className="w-20 h-20 rounded-full mx-auto mb-3 p-1 bg-stone-100 ring-4 ring-[#675137]/20 flex items-center justify-center">
@@ -261,6 +307,34 @@ export const ProfileView: React.FC = () => {
               </span>
             </div>
 
+            {(currentUser.startDate || currentUser.feeRecord.startDate) && (
+              <div className="flex items-center justify-between p-2.5 rounded-2xl bg-[#FAF8F5] border border-stone-100">
+                <span className="text-stone-600">Starting Date</span>
+                <span className="font-bold text-[#2D251E]">
+                  {formatDateReadable(currentUser.startDate || currentUser.feeRecord.startDate)}
+                </span>
+              </div>
+            )}
+
+            {(currentUser.endDate || currentUser.feeRecord.endDate) && (
+              <div className="flex items-center justify-between p-2.5 rounded-2xl bg-[#FAF8F5] border border-stone-100">
+                <span className="text-stone-600">Ending Date</span>
+                <span className="font-bold text-[#2D251E]">
+                  {formatDateReadable(currentUser.endDate || currentUser.feeRecord.endDate)}
+                </span>
+              </div>
+            )}
+
+            {currentUser.preferredTimeSlot && (
+              <div className="flex items-center justify-between p-2.5 rounded-2xl bg-[#FAF8F5] border border-stone-100">
+                <span className="text-stone-600">Daily Reserved Timeslot</span>
+                <span className="font-bold text-[#2D251E] flex items-center gap-1">
+                  <Clock className="w-3.5 h-3.5 text-[#675137]" />
+                  <span>{currentUser.preferredTimeSlot}</span>
+                </span>
+              </div>
+            )}
+
             <div className="flex items-center justify-between p-2.5 rounded-2xl bg-[#FAF8F5] border border-stone-100">
               <span className="text-stone-600">Next Due Date</span>
               <span className="font-bold text-[#2D251E]">{currentUser.feeRecord.dueDate}</span>
@@ -272,6 +346,28 @@ export const ProfileView: React.FC = () => {
                 <span className="font-semibold text-[#2D251E]">{currentUser.feeRecord.lastPaidDate}</span>
               </div>
             )}
+
+            {/* Existing Customer Edit Dates & Package Button */}
+            <button
+              type="button"
+              onClick={() => {
+                setEditMembershipState({
+                  packageChoice: currentUser.membershipTier?.includes('3 Month') ? '3_month' : '1_month',
+                  startDate: currentUser.startDate || currentUser.feeRecord?.startDate || getTodayDateString(),
+                  endDate:
+                    currentUser.endDate ||
+                    currentUser.feeRecord?.endDate ||
+                    calculateEndDateFromStart(currentUser.startDate || getTodayDateString(), 1),
+                  preferredTimeSlot: currentUser.preferredTimeSlot || '08:00 AM - 09:00 AM',
+                  isExistingCustomer: true
+                });
+                setShowEditMembership(true);
+              }}
+              className="w-full mt-2 py-2.5 px-3 rounded-xl bg-[#FAF6F0] hover:bg-[#F2E9DC] text-[#675137] border border-[#D5C0A4] text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-[0.99] shadow-xs"
+            >
+              <Calendar className="w-3.5 h-3.5 text-[#675137]" />
+              <span>Change Starting/Ending Dates or Package</span>
+            </button>
           </div>
         </div>
       )}
@@ -346,6 +442,64 @@ export const ProfileView: React.FC = () => {
           isOpen={showWhitelist}
           onClose={() => setShowWhitelist(false)}
         />
+      )}
+
+      {/* Modal for Client to Edit Membership, Starting/Ending Dates & Timeslot */}
+      {showEditMembership && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-stone-900/60 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="bg-[#FAF6F0] rounded-3xl w-full max-w-lg shadow-2xl border border-[#D5C0A4] max-h-[90vh] flex flex-col overflow-hidden">
+            {/* Modal Header */}
+            <div className="p-5 pb-4 bg-white border-b border-stone-200/80 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-[#EADCC9] text-[#675137] flex items-center justify-center">
+                  <Calendar className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-serif font-bold text-base text-[#2D251E]">
+                    Update Program Dates &amp; Timeslot
+                  </h3>
+                  <p className="text-xs text-stone-500">
+                    Existing member custom schedule &amp; package duration
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowEditMembership(false)}
+                className="w-8 h-8 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-600 flex items-center justify-center"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-5 overflow-y-auto flex-1">
+              <PackageAndScheduleSelector
+                value={editMembershipState}
+                onChange={setEditMembershipState}
+                showExistingCustomerToggle={true}
+              />
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 bg-white border-t border-stone-200 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowEditMembership(false)}
+                className="px-4 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveMembership}
+                className="px-5 py-2.5 rounded-xl bg-[#675137] hover:bg-[#52402B] text-white font-bold text-xs shadow-md transition-all active:scale-95"
+              >
+                Save Schedule Changes
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

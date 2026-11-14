@@ -95,9 +95,11 @@ export interface SessionTimeslot {
 export interface ClientFeeRecord {
   clientId: string;
   status: 'paid' | 'pending';
-  amount: string; // e.g. "₹12,000"
-  packageTitle: string; // e.g. "Reformer Unlimited"
-  dueDate: string; // e.g. "Nov 10, 2026"
+  amount: string; // e.g. "₹6,000" or "₹16,000"
+  packageTitle: string; // e.g. "1 Month Studio Package" or "3 Month Studio Package"
+  dueDate: string; // e.g. "Dec 14, 2026"
+  startDate?: string;
+  endDate?: string;
   lastPaidDate?: string; // e.g. "Oct 10, 2026"
   lastReminderSent?: string; // e.g. "Today, 10:30 AM"
   notes?: string;
@@ -137,6 +139,10 @@ export interface UserProfile {
   importedDietPdf?: ImportedDietPdf;
   feeRecord?: ClientFeeRecord;
   joinedDate: string;
+  startDate?: string;
+  endDate?: string;
+  preferredTimeSlot?: string;
+  isExistingCustomer?: boolean;
   fitnessGoal?: string;
   experienceLevel?: string;
   dietaryPreference?: string;

@@ -16,6 +16,12 @@ import {
   INITIAL_BATCH_SLOTS,
   INSTRUCTOR_WHITELISTED_EMAILS
 } from '../data/mockData';
+import {
+  STUDIO_PACKAGES,
+  getTodayDateString,
+  calculateEndDateFromStart,
+  type StudioPackageId
+} from '../data/packagePlans';
 import { setupNotificationListeners } from '../services/notificationService';
 
 export interface CreateSessionOptions extends Partial<SessionTimeslot> {
@@ -82,7 +88,7 @@ interface AppContextType {
     email: string,
     username: string,
     role: 'instructor' | 'client',
-    extraData?: Partial<UserProfile>
+    extraData?: Partial<UserProfile> & { packageChoice?: StudioPackageId }
   ) => void;
   completeClientOnboarding: (data: {
     avatarUrl?: string;
@@ -95,7 +101,21 @@ interface AppContextType {
     fitnessGoal?: string;
     experienceLevel?: string;
     dietaryPreference?: string;
+    packageChoice?: StudioPackageId;
+    startDate?: string;
+    endDate?: string;
+    preferredTimeSlot?: string;
+    isExistingCustomer?: boolean;
   }) => void;
+  updateClientMembership: (
+    clientId: string,
+    data: {
+      packageChoice?: StudioPackageId;
+      startDate?: string;
+      endDate?: string;
+      preferredTimeSlot?: string;
+    }
+  ) => void;
   logout: () => void;
   switchUser: (user: UserProfile) => void;
   
@@ -439,6 +459,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     // Create new client with Google Profile (Onboarding required)
     const clientDisplayName = name || cleanEmail.split('@')[0].replace('.', ' ').replace(/(^\w|\s\w)/g, m => m.toUpperCase());
+    const initialStart = getTodayDateString();
+    const initialEnd = calculateEndDateFromStart(initialStart, 1);
+
     const newClient: UserProfile = {
       id: `client-g-${Date.now()}`,
       email: cleanEmail,
@@ -446,19 +469,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       displayName: clientDisplayName,
       role: 'client',
       avatarUrl: avatarUrl || `https://api.dicebear.com/7.x/notionists/svg?seed=${cleanEmail}&backgroundColor=eaf0e9`,
-      membershipTier: 'Mindful Core 8-Pack (Welcome Tier)',
+      membershipTier: '1 Month Reformer Program (₹6,000)',
       joinedDate: 'Nov 2026',
+      startDate: initialStart,
+      endDate: initialEnd,
+      preferredTimeSlot: '08:00 AM - 09:00 AM',
       bio: 'New member connected via Google Account at RC Pilates & Fitness Studio.',
-      isOnboarded: false, // triggers the New Client Setup Wizard!
+      isOnboarded: false, // triggers the 4-Step New Client Setup Wizard!
       fitnessGoal: 'Core Strength & Posture',
       experienceLevel: 'Beginner',
       dietaryPreference: 'Vegetarian',
       feeRecord: {
         clientId: `client-g-${Date.now()}`,
         status: 'pending',
-        amount: '₹8,500',
-        packageTitle: 'Mindful Core 8-Pack (Welcome Tier)',
-        dueDate: 'Nov 30, 2026'
+        amount: '₹6,000',
+        packageTitle: '1 Month Reformer Program',
+        dueDate: initialEnd,
+        startDate: initialStart,
+        endDate: initialEnd
       },
       dietPlan: {
         ...DEFAULT_STUDIO_DIET_PLAN,
@@ -469,9 +497,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const welcomeSession: SessionTimeslot = {
       id: `slot-welcome-${Date.now()}`,
-      sessionTitle: 'Reformer Postural Assessment & Induction',
-      date: '2026-11-09',
-      time: '09:00 AM - 10:00 AM',
+      sessionTitle: 'Reformer Induction & Assessment (1 Month Package)',
+      date: initialStart,
+      time: '08:00 AM - 09:00 AM',
       instructorName: 'Radhika Chopra',
       instructorId: 'instructor-1',
       clientId: newClient.id,
@@ -498,12 +526,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     fitnessGoal?: string;
     experienceLevel?: string;
     dietaryPreference?: string;
+    packageChoice?: StudioPackageId;
+    startDate?: string;
+    endDate?: string;
+    preferredTimeSlot?: string;
+    isExistingCustomer?: boolean;
   }) => {
     if (!currentUser) return;
     const resolvedHeight = data.height || currentUser.height || '165 cm';
     const resolvedWeight = data.weight || currentUser.weight || '60 kg';
     const resolvedAge = data.age || currentUser.age || '28';
     const resolvedGender = data.gender || currentUser.gender || 'Female';
+
+    const selectedPkg = STUDIO_PACKAGES.find(p => p.id === data.packageChoice) || STUDIO_PACKAGES[0];
+    const resolvedStartDate = data.startDate || currentUser.startDate || getTodayDateString();
+    const resolvedEndDate = data.endDate || calculateEndDateFromStart(resolvedStartDate, selectedPkg.durationMonths);
+    const resolvedTimeSlot = data.preferredTimeSlot || currentUser.preferredTimeSlot || '08:00 AM - 09:00 AM';
 
     const updatedUser: UserProfile = {
       ...currentUser,
@@ -517,7 +555,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       fitnessGoal: data.fitnessGoal || currentUser.fitnessGoal || 'Core Strength & Posture',
       experienceLevel: data.experienceLevel || currentUser.experienceLevel || 'Beginner',
       dietaryPreference: data.dietaryPreference || currentUser.dietaryPreference || 'Vegetarian',
+      membershipTier: `${selectedPkg.shortTitle} (${selectedPkg.price})`,
+      startDate: resolvedStartDate,
+      endDate: resolvedEndDate,
+      preferredTimeSlot: resolvedTimeSlot,
+      isExistingCustomer: data.isExistingCustomer || false,
       isOnboarded: true,
+      feeRecord: {
+        clientId: currentUser.id,
+        status: currentUser.feeRecord?.status || 'pending',
+        amount: selectedPkg.price,
+        packageTitle: selectedPkg.title,
+        dueDate: resolvedEndDate,
+        startDate: resolvedStartDate,
+        endDate: resolvedEndDate,
+        lastPaidDate: currentUser.feeRecord?.lastPaidDate
+      },
       dietPlan: currentUser.dietPlan ? {
         ...currentUser.dietPlan,
         metrics: {
@@ -527,6 +580,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
       } : undefined
     };
+
+    // Update their welcome/initial session date and time to match their chosen starting date and timeslot
+    setSessions(prev =>
+      prev.map(s => {
+        if (s.clientId === currentUser.id) {
+          return {
+            ...s,
+            date: resolvedStartDate,
+            time: resolvedTimeSlot,
+            sessionTitle: `Reformer Induction & Assessment (${selectedPkg.shortTitle})`
+          };
+        }
+        return s;
+      })
+    );
 
     setCurrentUser(updatedUser);
     setClients(prev => prev.map(c => (c.id === updatedUser.id ? updatedUser : c)));
@@ -592,8 +660,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     email: string,
     username: string,
     role: 'instructor' | 'client',
-    extraData?: Partial<UserProfile>
+    extraData?: Partial<UserProfile> & { packageChoice?: StudioPackageId } & { packageChoice?: StudioPackageId }
   ) => {
+    const selectedPkg = extraData?.packageChoice
+      ? STUDIO_PACKAGES.find(p => p.id === extraData.packageChoice) || STUDIO_PACKAGES[0]
+      : STUDIO_PACKAGES[0];
+
+    const resolvedStart = extraData?.startDate || getTodayDateString();
+    const resolvedEnd = extraData?.endDate || calculateEndDateFromStart(resolvedStart, selectedPkg.durationMonths);
+    const resolvedTime = extraData?.preferredTimeSlot || '08:00 AM - 09:00 AM';
+
     const newUser: UserProfile = {
       id: `${role}-${Date.now()}`,
       displayName: name,
@@ -601,8 +677,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       username,
       role,
       avatarUrl: extraData?.avatarUrl || `https://api.dicebear.com/7.x/notionists/svg?seed=${username}&backgroundColor=f4ece1`,
-      membershipTier: role === 'instructor' ? 'Senior Master Instructor' : 'Reformer Unlimited',
+      membershipTier:
+        role === 'instructor'
+          ? 'Senior Master Instructor'
+          : `${selectedPkg.shortTitle} (${selectedPkg.price})`,
       joinedDate: 'Today',
+      startDate: resolvedStart,
+      endDate: resolvedEnd,
+      preferredTimeSlot: resolvedTime,
+      isExistingCustomer: extraData?.isExistingCustomer || false,
       bio: role === 'instructor' ? 'RC Pilates & Fitness Studio instructor.' : 'Passionate RC Pilates studio member.',
       height: extraData?.height || '165 cm',
       weight: extraData?.weight || '60 kg',
@@ -613,6 +696,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       experienceLevel: extraData?.experienceLevel || 'Beginner',
       dietaryPreference: extraData?.dietaryPreference || 'Vegetarian',
       isOnboarded: true,
+      feeRecord: role === 'client' ? {
+        clientId: `${role}-${Date.now()}`,
+        status: 'pending',
+        amount: selectedPkg.price,
+        packageTitle: selectedPkg.title,
+        dueDate: resolvedEnd,
+        startDate: resolvedStart,
+        endDate: resolvedEnd
+      } : undefined,
       dietPlan: {
         ...DEFAULT_STUDIO_DIET_PLAN,
         id: `diet-${Date.now()}`,
@@ -627,6 +719,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     if (role === 'client') {
+      const firstSession: SessionTimeslot = {
+        id: `slot-${Date.now()}`,
+        sessionTitle: `Reformer Induction & Assessment (${selectedPkg.shortTitle})`,
+        date: resolvedStart,
+        time: resolvedTime,
+        instructorName: 'Radhika Chopra',
+        instructorId: 'instructor-1',
+        clientId: newUser.id,
+        clientName: name,
+        status: 'scheduled',
+        notes: `Initial induction and assessment for ${selectedPkg.title}.`
+      };
+      setSessions(prev => [firstSession, ...prev]);
       setClients(prev => [newUser, ...prev]);
     }
 
@@ -635,6 +740,55 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setCurrentUser(newUser);
       setActiveTab('dashboard');
     }
+  };
+
+  const updateClientMembership = (
+    clientId: string,
+    data: {
+      packageChoice?: StudioPackageId;
+      startDate?: string;
+      endDate?: string;
+      preferredTimeSlot?: string;
+    }
+  ) => {
+    setClients(prev =>
+      prev.map(c => {
+        if (c.id === clientId) {
+          const selectedPkg = data.packageChoice
+            ? STUDIO_PACKAGES.find(p => p.id === data.packageChoice) || STUDIO_PACKAGES[0]
+            : (c.membershipTier?.includes('3 Month') ? STUDIO_PACKAGES[1] : STUDIO_PACKAGES[0]);
+
+          const resolvedStart = data.startDate || c.startDate || getTodayDateString();
+          const resolvedEnd = data.endDate || c.endDate || calculateEndDateFromStart(resolvedStart, selectedPkg.durationMonths);
+          const resolvedTime = data.preferredTimeSlot || c.preferredTimeSlot || '08:00 AM - 09:00 AM';
+
+          const updated: UserProfile = {
+            ...c,
+            membershipTier: `${selectedPkg.shortTitle} (${selectedPkg.price})`,
+            startDate: resolvedStart,
+            endDate: resolvedEnd,
+            preferredTimeSlot: resolvedTime,
+            isExistingCustomer: true,
+            feeRecord: c.feeRecord
+              ? {
+                  ...c.feeRecord,
+                  amount: selectedPkg.price,
+                  packageTitle: selectedPkg.title,
+                  dueDate: resolvedEnd,
+                  startDate: resolvedStart,
+                  endDate: resolvedEnd
+                }
+              : undefined
+          };
+
+          if (currentUser?.id === clientId) {
+            setCurrentUser(updated);
+          }
+          return updated;
+        }
+        return c;
+      })
+    );
   };
 
   const logout = () => {
@@ -1040,6 +1194,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         loginWithCredentials,
         registerUser,
         completeClientOnboarding,
+        updateClientMembership,
         logout,
         switchUser,
         updateAttendance,

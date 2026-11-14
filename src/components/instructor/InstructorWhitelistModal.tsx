@@ -303,3 +303,4 @@ export const InstructorWhitelistModal: React.FC<InstructorWhitelistModalProps> =
     </div>
   );
 };
+
