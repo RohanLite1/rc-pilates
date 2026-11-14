@@ -16,6 +16,7 @@ import {
   Bell
 } from 'lucide-react';
 import { PilatesPoseDrawing } from '../common/StudioDrawings';
+import { getTodayDateString } from '../../data/packagePlans';
 
 export const ClientDashboard: React.FC = () => {
   const { currentUser, sessions, setActiveTab, requestReschedule, studioTimeslots } = useApp();
@@ -25,7 +26,7 @@ export const ClientDashboard: React.FC = () => {
 
   // Reschedule dialog state
   const [rescheduleTargetSlotId, setRescheduleTargetSlotId] = useState<string | null>(null);
-  const [requestedDate, setRequestedDate] = useState<string>('2026-11-09');
+  const [requestedDate, setRequestedDate] = useState<string>(() => getTodayDateString());
   const [requestedTime, setRequestedTime] = useState<string>(() => studioTimeslots[0] || '08:30 AM - 09:25 AM');
   const [rescheduleReason, setRescheduleReason] = useState<string>('');
   const [rescheduleSuccessMsg, setRescheduleSuccessMsg] = useState<string>('');
@@ -38,7 +39,7 @@ export const ClientDashboard: React.FC = () => {
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   // Find today's session or next upcoming session
-  const todayStr = '2026-11-06';
+  const todayStr = getTodayDateString();
   const todaySession = mySessions.find(s => s.date === todayStr);
   const nextSession = todaySession || mySessions.find(s => s.date >= todayStr) || mySessions[0];
 

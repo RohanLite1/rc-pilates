@@ -27,6 +27,7 @@ import { DayOfWeekPicker } from '../common/DayOfWeekPicker';
 import { StudioTimeslotSelect } from '../common/StudioTimeslotSelect';
 import { InstructorBatchesView } from './InstructorBatchesView';
 import { InstructorFeesView } from './InstructorFeesView';
+import { getTodayDateString } from '../../data/packagePlans';
 
 interface InstructorDashboardProps {
   onOpenClientDossier: (client: UserProfile, initialTab?: 'diet' | 'attendance') => void;
@@ -76,8 +77,9 @@ export const InstructorDashboard: React.FC<InstructorDashboardProps> = ({ onOpen
 
   if (!currentUser) return null;
 
-  const todayStr = '2026-11-06';
-  const todaySessions = sessions.filter(s => s.date === todayStr);
+  const todayStr = getTodayDateString();
+  const activeClientIds = new Set(clients.map(c => c.id));
+  const todaySessions = sessions.filter(s => s.date === todayStr && activeClientIds.has(s.clientId));
   const pendingReschedules = sessions.filter(s => s.rescheduleRequest?.status === 'pending');
   const notAttendingTodaySessions = todaySessions.filter(s => s.clientConfirmation === 'not_attending');
 

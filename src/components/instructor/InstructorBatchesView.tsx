@@ -11,6 +11,7 @@ import {
   Shield,
   Info
 } from 'lucide-react';
+import { getTodayDateString } from '../../data/packagePlans';
 
 interface InstructorBatchesViewProps {
   onBackToAttendance: () => void;
@@ -23,6 +24,7 @@ export const InstructorBatchesView: React.FC<InstructorBatchesViewProps> = ({
     batchSlots,
     toggleBatchSlotAvailability,
     sessions,
+    clients,
     addStudioTimeslot
   } = useApp();
 
@@ -34,9 +36,10 @@ export const InstructorBatchesView: React.FC<InstructorBatchesViewProps> = ({
   const eveningBatches = batchSlots.filter(s => s.category === 'evening');
 
   // Today's date to count bookings per slot
-  const todayStr = '2026-11-06';
+  const todayStr = getTodayDateString();
+  const activeClientIds = new Set(clients.map(c => c.id));
   const getBookingsCount = (timeSlot: string) => {
-    return sessions.filter(s => s.date === todayStr && s.time === timeSlot).length;
+    return sessions.filter(s => s.date === todayStr && s.time === timeSlot && activeClientIds.has(s.clientId)).length;
   };
 
   const handleAddCustom = (e: React.FormEvent) => {

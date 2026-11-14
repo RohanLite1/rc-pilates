@@ -22,12 +22,17 @@ import {
 } from '../common/StudioDrawings';
 import { DayOfWeekPicker } from '../common/DayOfWeekPicker';
 import { StudioTimeslotSelect } from '../common/StudioTimeslotSelect';
+import { getTodayDateString } from '../../data/packagePlans';
 
 export const InstructorScheduleView: React.FC = () => {
   const { sessions, updateAttendance, deleteSession, createOrUpdateSession, clients } = useApp();
 
   const [activeTab, setActiveTab] = useState<'calendar' | 'list'>('calendar');
   const [filter, setFilter] = useState<string>('all');
+
+  const todayStr = getTodayDateString();
+  const activeClientIds = new Set(clients.map(c => c.id));
+  const activeSessions = sessions.filter(s => activeClientIds.has(s.clientId));
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
 
   // Calendar state
@@ -86,14 +91,14 @@ export const InstructorScheduleView: React.FC = () => {
   };
 
   const getSessionsForDate = (dateStr: string) => {
-    return sessions.filter(s => s.date === dateStr);
+    return activeSessions.filter(s => s.date === dateStr);
   };
 
   const daySessions = getSessionsForDate(selectedDate);
 
-  const filteredSessions = sessions.filter(s => {
+  const filteredSessions = activeSessions.filter(s => {
     if (filter === 'all') return true;
-    if (filter === 'today') return s.date === '2026-11-06';
+    if (filter === 'today') return s.date === todayStr;
     if (filter === 'recurring') return s.isRecurring;
     return s.status === filter;
   });

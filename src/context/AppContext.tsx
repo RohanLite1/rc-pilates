@@ -26,11 +26,11 @@ import { setupNotificationListeners } from '../services/notificationService';
 import {
   subscribeToClients,
   saveClientToFirestore,
-  syncAllClientsToFirestore,
   deleteClientFromFirestore,
   subscribeToSessions,
   saveSessionToFirestore,
   syncAllSessionsToFirestore,
+  deleteSessionFromFirestore,
   subscribeToStudioConfig,
   saveStudioConfigToFirestore
 } from '../services/firestoreService';
@@ -260,7 +260,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [clients, setClients] = useState<UserProfile[]>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY_CLIENTS);
-      if (stored) return JSON.parse(stored);
+      if (stored) {
+        const parsed: UserProfile[] = JSON.parse(stored);
+        return parsed.filter(c => c.id !== 'client-1' && c.id !== 'client-2' && c.id !== 'client-3');
+      }
     } catch (e) {
       console.error(e);
     }
@@ -271,7 +274,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [sessions, setSessions] = useState<SessionTimeslot[]>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY_SESSIONS);
-      if (stored) return JSON.parse(stored);
+      if (stored) {
+        const parsed: SessionTimeslot[] = JSON.parse(stored);
+        return parsed.filter(s => s.clientId !== 'client-1' && s.clientId !== 'client-2' && s.clientId !== 'client-3');
+      }
     } catch (e) {
       console.error(e);
     }
@@ -342,7 +348,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const target = clients.find(c => c.id === clientId);
     const targetEmail = target?.email || target?.displayName || 'Client';
     setClients(prev => prev.filter(c => c.id !== clientId));
-    setSessions(prev => prev.filter(s => s.clientId !== clientId));
+    setSessions(prev => {
+      const clientSessions = prev.filter(s => s.clientId === clientId);
+      clientSessions.forEach(s => deleteSessionFromFirestore(s.id));
+      return prev.filter(s => s.clientId !== clientId);
+    });
     deleteClientFromFirestore(clientId);
     if (currentUser?.id === clientId) {
       setCurrentUser(null);
@@ -406,6 +416,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [clients]);
 
+  // Keep sessions clean: remove orphan sessions if their client was removed
+  useEffect(() => {
+    const activeClientIds = new Set(clients.map(c => c.id));
+    setSessions(prev => {
+      const orphans = prev.filter(s => !activeClientIds.has(s.clientId));
+      if (orphans.length > 0) {
+        orphans.forEach(s => deleteSessionFromFirestore(s.id));
+        return prev.filter(s => activeClientIds.has(s.clientId));
+      }
+      return prev;
+    });
+  }, [clients]);
+
   // Persist sessions
   useEffect(() => {
     try {
@@ -440,26 +463,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Real-time Firestore Synchronization across devices (iPhone, Android, Web)
   useEffect(() => {
-    let clientsReceived = false;
-    let sessionsReceived = false;
-
     // 1. Subscribe to live Firestore client profiles
     const unsubClients = subscribeToClients(
       incomingClients => {
-        if (incomingClients && incomingClients.length > 0) {
-          clientsReceived = true;
-          setClients(incomingClients);
+        if (incomingClients) {
+          // Filter out mock prototype clients
+          const cleanClients = incomingClients.filter(
+            c => c.id !== 'client-1' && c.id !== 'client-2' && c.id !== 'client-3'
+          );
+          // Delete lingering mock clients from Firestore
+          incomingClients
+            .filter(c => c.id === 'client-1' || c.id === 'client-2' || c.id === 'client-3')
+            .forEach(c => deleteClientFromFirestore(c.id));
+
+          setClients(cleanClients);
           // Keep currentUser in sync if client
           setCurrentUser(prevUser => {
             if (!prevUser || prevUser.role !== 'client') return prevUser;
-            const match = incomingClients.find(c => c.id === prevUser.id);
+            const match = cleanClients.find(c => c.id === prevUser.id);
             return match || prevUser;
           });
           // Keep instructor's selected client in sync
           setSelectedClient(prevSel => {
-            if (!prevSel) return incomingClients[0] || null;
-            const match = incomingClients.find(c => c.id === prevSel.id);
-            return match || incomingClients[0] || null;
+            if (!prevSel) return cleanClients[0] || null;
+            const match = cleanClients.find(c => c.id === prevSel.id);
+            return match || cleanClients[0] || null;
           });
         }
       },
@@ -469,9 +497,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // 2. Subscribe to live Firestore sessions
     const unsubSessions = subscribeToSessions(
       incomingSessions => {
-        if (incomingSessions && incomingSessions.length > 0) {
-          sessionsReceived = true;
-          setSessions(incomingSessions);
+        if (incomingSessions) {
+          // Filter out mock prototype sessions
+          const cleanSessions = incomingSessions.filter(
+            s => s.clientId !== 'client-1' && s.clientId !== 'client-2' && s.clientId !== 'client-3'
+          );
+          // Delete lingering mock sessions from Firestore
+          incomingSessions
+            .filter(s => s.clientId === 'client-1' || s.clientId === 'client-2' || s.clientId === 'client-3')
+            .forEach(s => deleteSessionFromFirestore(s.id));
+
+          setSessions(cleanSessions);
         }
       },
       err => console.warn('Firestore sessions sync error:', err)
@@ -493,14 +529,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       err => console.warn('Firestore config sync error:', err)
     );
 
-    // Initial cloud seed if Firestore database is fresh
+    // Initial cloud seed if Firestore database is fresh (only studio configs, no mock clients)
     const seedTimer = setTimeout(() => {
-      if (!clientsReceived && clients.length > 0) {
-        syncAllClientsToFirestore(clients);
-      }
-      if (!sessionsReceived && sessions.length > 0) {
-        syncAllSessionsToFirestore(sessions);
-      }
       saveStudioConfigToFirestore({
         batchSlots,
         studioTimeslots,
