@@ -22,7 +22,7 @@ import {
   calculateEndDateFromStart,
   type StudioPackageId
 } from '../data/packagePlans';
-import { setupNotificationListeners } from '../services/notificationService';
+import { setupNotificationListeners, sendStudioNotification } from '../services/notificationService';
 import {
   subscribeToClients,
   saveClientToFirestore,
@@ -147,7 +147,7 @@ interface AppContextType {
 
 const STORAGE_KEY_CLIENTS = 'rc_pilates_clients_v4';
 const STORAGE_KEY_SESSIONS = 'rc_pilates_sessions_v4';
-const STORAGE_KEY_CURRENT_USER = 'rc_pilates_current_user_v4';
+const STORAGE_KEY_CURRENT_USER = 'rc_pilates_current_user_v5';
 const STORAGE_KEY_THEME = 'rc_pilates_theme_v1';
 const STORAGE_KEY_TIMESLOTS = 'rc_pilates_studio_timeslots_v2';
 const STORAGE_KEY_BATCH_SLOTS = 'rc_pilates_batch_slots_v1';
@@ -363,20 +363,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Current logged in user (defaults to null so user sees the Landing/Login page on first open)
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => {
     try {
+      // Clear legacy storage keys so new installs or updated APKs never auto-login as instructor
+      [
+        'rc_pilates_current_user_v4',
+        'rc_pilates_current_user_v3',
+        'rc_pilates_current_user_v2',
+        'rc_pilates_current_user',
+        'aura_current_user'
+      ].forEach(k => {
+        try {
+          localStorage.removeItem(k);
+        } catch {}
+      });
+
       const stored = localStorage.getItem(STORAGE_KEY_CURRENT_USER);
       if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed && parsed.role === 'instructor') {
-          return {
-            ...parsed,
-            displayName: 'Radhika Chopra',
-            avatarUrl: '',
-            email: 'radhika.instructor@rcpilates.com',
-            username: 'radhika_instructor',
-            bio: 'Founder & Lead Instructor at RC Pilates & Fitness Studio. Classical & contemporary reformer specialist focused on postural alignment, core restoration, and mindful fitness.'
-          };
-        }
-        return parsed;
+        return JSON.parse(stored);
       }
     } catch (e) {
       console.error(e);
@@ -409,7 +411,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Firestore sync state refs
   const hasLoadedInitialFirestoreClients = useRef<boolean>(false);
+  const hasLoadedInitialFirestoreSessions = useRef<boolean>(false);
   const knownActiveClientIds = useRef<Set<string>>(new Set());
+  const knownPendingRescheduleSessionIds = useRef<Set<string>>(new Set());
+  const knownRescheduleRequestStatuses = useRef<Map<string, string>>(new Map());
 
   // Persist clients
   useEffect(() => {
@@ -545,6 +550,55 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           incomingSessions
             .filter(s => s.clientId === 'client-1' || s.clientId === 'client-2' || s.clientId === 'client-3')
             .forEach(s => deleteSessionFromFirestore(s.id));
+
+          // Check for cross-device reschedule alerts
+          if (!hasLoadedInitialFirestoreSessions.current) {
+            hasLoadedInitialFirestoreSessions.current = true;
+            cleanSessions.forEach(s => {
+              if (s.rescheduleRequest?.status) {
+                knownRescheduleRequestStatuses.current.set(s.id, s.rescheduleRequest.status);
+              }
+              if (s.rescheduleRequest?.status === 'pending') {
+                knownPendingRescheduleSessionIds.current.add(s.id);
+              }
+            });
+          } else {
+            cleanSessions.forEach(s => {
+              const prevStatus = knownRescheduleRequestStatuses.current.get(s.id);
+              const curStatus = s.rescheduleRequest?.status;
+
+              if (currentUser?.role === 'instructor') {
+                if (curStatus === 'pending' && !knownPendingRescheduleSessionIds.current.has(s.id)) {
+                  knownPendingRescheduleSessionIds.current.add(s.id);
+                  sendStudioNotification(
+                    'RC Pilates - Reschedule Request',
+                    `${s.clientName} requested to reschedule "${s.sessionTitle}" to ${s.rescheduleRequest?.requestedDate} at ${s.rescheduleRequest?.requestedTime}.`,
+                    { sessionId: s.id }
+                  );
+                }
+              } else if (currentUser?.role === 'client' && s.clientId === currentUser.id) {
+                if (prevStatus === 'pending' && curStatus && curStatus !== 'pending') {
+                  if (curStatus === 'approved') {
+                    sendStudioNotification(
+                      'RC Pilates - Reschedule Approved',
+                      `Your request to reschedule "${s.sessionTitle}" to ${s.date} at ${s.time} was accepted by Radhika Chopra.`,
+                      { sessionId: s.id }
+                    );
+                  } else if (curStatus === 'declined') {
+                    sendStudioNotification(
+                      'RC Pilates - Reschedule Declined',
+                      `Your request to reschedule "${s.sessionTitle}" was declined. The original timeslot is kept.`,
+                      { sessionId: s.id }
+                    );
+                  }
+                }
+              }
+
+              if (curStatus) {
+                knownRescheduleRequestStatuses.current.set(s.id, curStatus);
+              }
+            });
+          }
 
           setSessions(cleanSessions);
         }
@@ -1312,10 +1366,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const now = new Date();
     const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+    let updatedSession: SessionTimeslot | null = null;
     setSessions(prev =>
       prev.map(s => {
         if (s.id === sessionId) {
-          return {
+          const updated: SessionTimeslot = {
             ...s,
             status: 'reschedule_requested' as AttendanceStatus,
             rescheduleRequest: {
@@ -1326,44 +1381,67 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               status: 'pending'
             }
           };
+          updatedSession = updated;
+          return updated;
         }
         return s;
       })
     );
+
+    if (updatedSession) {
+      saveSessionToFirestore(updatedSession);
+      sendStudioNotification(
+        'RC Pilates - Reschedule Request Sent',
+        `Your request to move "${(updatedSession as SessionTimeslot).sessionTitle}" to ${newDate} at ${newTime} has been submitted to Radhika Chopra.`,
+        { sessionId, type: 'reschedule_request' }
+      );
+    }
   };
 
   // Instructor Responds to Reschedule Request
   const respondToReschedule = (sessionId: string, approve: boolean) => {
+    let updatedSession: SessionTimeslot | null = null;
     setSessions(prev =>
       prev.map(s => {
         if (s.id === sessionId && s.rescheduleRequest) {
-          if (approve) {
-            return {
-              ...s,
-              date: s.rescheduleRequest.requestedDate,
-              time: s.rescheduleRequest.requestedTime,
-              status: 'scheduled' as AttendanceStatus,
-              rescheduleRequest: {
-                ...s.rescheduleRequest,
-                status: 'approved'
-              },
-              notes: `Reschedule approved: moved to ${s.rescheduleRequest.requestedDate} (${s.rescheduleRequest.requestedTime})`
-            };
-          } else {
-            return {
-              ...s,
-              status: 'scheduled' as AttendanceStatus,
-              rescheduleRequest: {
-                ...s.rescheduleRequest,
-                status: 'declined'
-              },
-              notes: 'Reschedule request declined: original timeslot maintained.'
-            };
-          }
+          const updated: SessionTimeslot = approve
+            ? {
+                ...s,
+                date: s.rescheduleRequest.requestedDate,
+                time: s.rescheduleRequest.requestedTime,
+                status: 'scheduled' as AttendanceStatus,
+                rescheduleRequest: {
+                  ...s.rescheduleRequest,
+                  status: 'approved'
+                },
+                notes: `Reschedule approved: moved to ${s.rescheduleRequest.requestedDate} (${s.rescheduleRequest.requestedTime})`
+              }
+            : {
+                ...s,
+                status: 'scheduled' as AttendanceStatus,
+                rescheduleRequest: {
+                  ...s.rescheduleRequest,
+                  status: 'declined'
+                },
+                notes: 'Reschedule request declined: original timeslot maintained.'
+              };
+          updatedSession = updated;
+          return updated;
         }
         return s;
       })
     );
+
+    if (updatedSession) {
+      saveSessionToFirestore(updatedSession);
+      sendStudioNotification(
+        approve ? 'RC Pilates - Reschedule Approved' : 'RC Pilates - Reschedule Declined',
+        approve
+          ? `You accepted ${(updatedSession as SessionTimeslot).clientName}'s reschedule request for ${(updatedSession as SessionTimeslot).date} at ${(updatedSession as SessionTimeslot).time}.`
+          : `You declined ${(updatedSession as SessionTimeslot).clientName}'s reschedule request. The original time was preserved.`,
+        { sessionId, type: 'reschedule_response', status: approve ? 'approved' : 'declined' }
+      );
+    }
   };
 
   // Update Client Studio Diet Plan
@@ -1494,8 +1572,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setBatchSlots(INITIAL_BATCH_SLOTS);
     setStudioTimeslots(AVAILABLE_STUDIO_TIMESLOTS);
     setInstructorWhitelist(INSTRUCTOR_WHITELISTED_EMAILS);
-    setCurrentUser(INITIAL_INSTRUCTOR);
-    setSelectedClient(INITIAL_CLIENTS[0]);
+    setCurrentUser(null);
+    setSelectedClient(null);
   };
 
   return (

@@ -293,6 +293,68 @@ export async function triggerDemoNotification(
 }
 
 /**
+ * Send an immediate alert notification to the user (Native Android notification shade & Web browser)
+ */
+export async function sendStudioNotification(
+  title: string,
+  body: string,
+  extraData?: Record<string, unknown>
+): Promise<boolean> {
+  const granted = await requestNotificationPermission();
+  if (!granted) return false;
+
+  await initializeNotificationChannels();
+  const notificationId = Math.floor((Date.now() + Math.random() * 1000) % 100000);
+
+  if (Capacitor.isNativePlatform()) {
+    try {
+      await LocalNotifications.schedule({
+        notifications: [
+          {
+            id: notificationId,
+            title,
+            body,
+            schedule: { at: new Date(Date.now() + 250), allowWhileIdle: true },
+            channelId: CHANNEL_ID,
+            extra: extraData || {},
+            smallIcon: 'ic_launcher'
+          }
+        ]
+      });
+      return true;
+    } catch (err) {
+      console.warn('Native notification failed:', err);
+      return false;
+    }
+  }
+
+  // Web Browser / PWA:
+  try {
+    const reg = await registerServiceWorker();
+    if (reg && 'showNotification' in reg) {
+      await reg.showNotification(title, {
+        body,
+        icon: '/pwa-icon-192.png',
+        badge: '/favicon.png',
+        tag: `rc-notice-${Date.now()}`,
+        data: extraData || {}
+      });
+      return true;
+    } else if ('Notification' in window && Notification.permission === 'granted') {
+      new Notification(title, {
+        body,
+        icon: '/pwa-icon-192.png',
+        badge: '/favicon.png'
+      });
+      return true;
+    }
+  } catch (e) {
+    console.warn('Web notification failed:', e);
+  }
+  return false;
+}
+
+/**
  * Schedule automated class reminders 45 minutes before class start
  */
 export async function scheduleClassReminder45Min(

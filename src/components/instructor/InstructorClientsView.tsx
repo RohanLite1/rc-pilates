@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import type { UserProfile } from '../../types';
-import { Search, ChevronRight, Plus, Apple, CreditCard, Send, Check, FileText, Trash2, AlertTriangle, ShieldAlert } from 'lucide-react';
+import { Search, ChevronRight, Plus, Apple, CreditCard, Send, Check, FileText, Trash2, AlertTriangle, ShieldAlert, ClipboardList } from 'lucide-react';
 import { InstructorAlignmentDrawing, BotanicalBranchDrawing } from '../common/StudioDrawings';
 import { StudioLogo } from '../common/StudioLogo';
 
 interface InstructorClientsViewProps {
-  onOpenDossier: (client: UserProfile, initialTab?: 'diet' | 'attendance') => void;
+  onOpenDossier: (client: UserProfile, initialTab?: 'intake' | 'diet' | 'attendance') => void;
 }
 
 export const InstructorClientsView: React.FC<InstructorClientsViewProps> = ({ onOpenDossier }) => {
@@ -181,6 +181,88 @@ export const InstructorClientsView: React.FC<InstructorClientsViewProps> = ({ on
               </div>
             )}
 
+            {/* Setup Wizard Intake Information Box */}
+            {(() => {
+              const h = parseFloat(c.height || '165') || 165;
+              const w = parseFloat(c.weight || '60') || 60;
+              const clientBmi = (w / ((h / 100) * (h / 100))).toFixed(1);
+              return (
+                <div className="p-3.5 bg-[#FAF6F0] dark:bg-[#202722] rounded-2xl border border-[#E6D7C3] dark:border-stone-800 space-y-2.5 text-xs">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 text-stone-800 dark:text-stone-200 font-bold">
+                      <ClipboardList className="w-3.5 h-3.5 text-emerald-800 dark:text-emerald-400" />
+                      <span>Setup Wizard Intake Profile</span>
+                    </div>
+                    <span
+                      className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${
+                        c.isExistingCustomer
+                          ? 'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950 dark:text-amber-200'
+                          : 'bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-200'
+                      }`}
+                    >
+                      {c.isExistingCustomer ? 'Existing Studio Customer' : 'New Member'}
+                    </span>
+                  </div>
+
+                  {/* Physical Vitals Grid */}
+                  <div className="grid grid-cols-4 gap-1.5 text-center">
+                    <div className="p-1.5 bg-white dark:bg-[#181F1A] rounded-xl border border-stone-200/70 dark:border-stone-800">
+                      <p className="text-[10px] text-stone-500 font-medium">Height</p>
+                      <p className="font-bold text-stone-800 dark:text-stone-200">{c.height || '165 cm'}</p>
+                    </div>
+                    <div className="p-1.5 bg-white dark:bg-[#181F1A] rounded-xl border border-stone-200/70 dark:border-stone-800">
+                      <p className="text-[10px] text-stone-500 font-medium">Weight</p>
+                      <p className="font-bold text-stone-800 dark:text-stone-200">{c.weight || '60 kg'}</p>
+                    </div>
+                    <div className="p-1.5 bg-white dark:bg-[#181F1A] rounded-xl border border-stone-200/70 dark:border-stone-800">
+                      <p className="text-[10px] text-stone-500 font-medium">BMI</p>
+                      <p className="font-bold text-emerald-800 dark:text-emerald-400">{clientBmi}</p>
+                    </div>
+                    <div className="p-1.5 bg-white dark:bg-[#181F1A] rounded-xl border border-stone-200/70 dark:border-stone-800">
+                      <p className="text-[10px] text-stone-500 font-medium">Age / Sex</p>
+                      <p className="font-bold text-stone-800 dark:text-stone-200">
+                        {c.age || '28'} / {c.gender ? c.gender[0] : 'F'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Goals, Experience & Nutrition */}
+                  <div className="grid grid-cols-2 gap-2 text-[11px]">
+                    <div className="bg-white/80 dark:bg-[#181F1A] p-2 rounded-xl border border-stone-200/60 dark:border-stone-800">
+                      <span className="text-[10px] text-stone-500 font-semibold block">Goal & Experience</span>
+                      <p className="font-bold text-stone-800 dark:text-stone-200 truncate">
+                        {c.fitnessGoal || 'Core Strength & Posture'}
+                      </p>
+                      <p className="text-[10px] text-stone-500 truncate">{c.experienceLevel || 'Beginner'}</p>
+                    </div>
+                    <div className="bg-white/80 dark:bg-[#181F1A] p-2 rounded-xl border border-stone-200/60 dark:border-stone-800">
+                      <span className="text-[10px] text-stone-500 font-semibold block">Nutrition & Slot</span>
+                      <p className="font-bold text-stone-800 dark:text-stone-200 truncate">
+                        {c.dietaryPreference || 'Vegetarian'}
+                      </p>
+                      <p className="text-[10px] text-emerald-800 dark:text-emerald-400 font-bold truncate">
+                        {c.preferredTimeSlot || '08:00 AM - 09:00 AM'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Term Dates & Recurring Days */}
+                  {(c.startDate || c.selectedDays) && (
+                    <div className="flex items-center justify-between text-[10px] pt-1 text-stone-600 dark:text-stone-400 border-t border-[#E6D7C3]/60 dark:border-stone-800 flex-wrap gap-1">
+                      <span>
+                        Term: <strong>{c.startDate || 'Current'}</strong> to <strong>{c.endDate || 'Active'}</strong>
+                      </span>
+                      {c.selectedDays && c.selectedDays.length > 0 && (
+                        <span className="font-bold text-stone-700 dark:text-stone-300">
+                          Days: {c.selectedDays.map(d => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d]).join(', ')}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
             {/* Diet Plan Summary Chip */}
             <div className="p-3 bg-[#FAF8F5] dark:bg-[#242D26] rounded-2xl border border-stone-200/80 dark:border-stone-800 flex items-center justify-between text-xs">
               <div className="flex items-center gap-2 text-stone-800 dark:text-stone-200 font-semibold truncate">
@@ -201,34 +283,44 @@ export const InstructorClientsView: React.FC<InstructorClientsViewProps> = ({ on
               </div>
             </div>
 
-            {/* Action Buttons: 3 clean actions (Diet, Schedule, Delete) */}
-            <div className="grid grid-cols-3 gap-2 pt-1 border-t border-stone-100 dark:border-stone-800 text-xs">
+            {/* Action Buttons: 4 clean actions (Intake, Diet, Schedule, Remove) */}
+            <div className="grid grid-cols-4 gap-1.5 pt-1 border-t border-stone-100 dark:border-stone-800 text-xs">
+              <button
+                type="button"
+                onClick={() => onOpenDossier(c, 'intake')}
+                className="py-2.5 px-1.5 rounded-xl bg-[#FAF6F0] dark:bg-[#202722] hover:bg-[#F2E9DC] text-stone-800 dark:text-stone-200 border border-[#D5C0A4] dark:border-stone-700 font-bold flex items-center justify-center gap-1 transition-colors"
+                title="View full onboarding intake answers"
+              >
+                <ClipboardList className="w-3.5 h-3.5 text-stone-700 dark:text-stone-300 shrink-0" />
+                <span className="truncate">Intake</span>
+              </button>
+
               <button
                 type="button"
                 onClick={() => onOpenDossier(c, 'diet')}
-                className="py-2.5 px-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/70 hover:bg-emerald-100 text-emerald-900 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-800 font-bold flex items-center justify-center gap-1.5 transition-colors"
+                className="py-2.5 px-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/70 hover:bg-emerald-100 text-emerald-900 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-800 font-bold flex items-center justify-center gap-1 transition-colors"
               >
-                <FileText className="w-3.5 h-3.5 text-emerald-800" />
-                <span>Diet</span>
+                <Apple className="w-3.5 h-3.5 text-emerald-800 shrink-0" />
+                <span className="truncate">Diet</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => onOpenDossier(c, 'attendance')}
-                className="py-2.5 px-2 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white font-bold shadow-xs flex items-center justify-center gap-1.5 transition-all active:scale-95"
+                className="py-2.5 px-1.5 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white font-bold shadow-xs flex items-center justify-center gap-1 transition-all active:scale-95"
               >
-                <span>Schedule</span>
-                <ChevronRight className="w-4 h-4" />
+                <span className="truncate">Schedule</span>
+                <ChevronRight className="w-3.5 h-3.5 shrink-0" />
               </button>
 
               <button
                 type="button"
                 onClick={() => setClientToDelete(c)}
-                className="py-2.5 px-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold flex items-center justify-center gap-1.5 transition-colors"
+                className="py-2.5 px-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold flex items-center justify-center gap-1 transition-colors"
                 title="Delete this client account"
               >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span>Remove</span>
+                <Trash2 className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">Remove</span>
               </button>
             </div>
           </div>

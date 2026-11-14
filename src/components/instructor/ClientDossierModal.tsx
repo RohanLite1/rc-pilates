@@ -10,7 +10,6 @@ import {
   Plus,
   Trash2,
   Save,
-  ExternalLink,
   Shield,
   RotateCcw,
   Target,
@@ -18,7 +17,9 @@ import {
   FileText,
   FileUp,
   Download,
-  BookOpen
+  BookOpen,
+  ClipboardList,
+  Scale
 } from 'lucide-react';
 import {
   AVAILABLE_STUDIO_TIMESLOTS,
@@ -42,13 +43,13 @@ import {
 
 interface ClientDossierModalProps {
   client: UserProfile;
-  initialTab?: 'diet' | 'attendance';
+  initialTab?: 'intake' | 'diet' | 'attendance';
   onClose: () => void;
 }
 
 export const ClientDossierModal: React.FC<ClientDossierModalProps> = ({
   client,
-  initialTab = 'diet',
+  initialTab = 'intake',
   onClose
 }) => {
   const {
@@ -56,12 +57,11 @@ export const ClientDossierModal: React.FC<ClientDossierModalProps> = ({
     updateAttendance,
     createOrUpdateSession,
     updateClientDietPlan,
-    switchUser,
     importDietPlanPdf,
     deleteClient
   } = useApp();
 
-  const [activeMainTab, setActiveMainTab] = useState<'diet' | 'attendance'>(initialTab);
+  const [activeMainTab, setActiveMainTab] = useState<'intake' | 'diet' | 'attendance'>(initialTab);
   const [dietSubPanel, setDietSubPanel] = useState<'targets' | 'meals' | 'habits' | 'pdf'>('meals');
   const [editingDayNum, setEditingDayNum] = useState<number>(1);
   const [savedFeedback, setSavedFeedback] = useState<string>('');
@@ -330,18 +330,6 @@ export const ClientDossierModal: React.FC<ClientDossierModalProps> = ({
             </button>
 
             <button
-              onClick={() => {
-                onClose();
-                switchUser(client);
-              }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 text-stone-800 dark:text-stone-200 text-xs font-bold transition-colors"
-              title="View as this client immediately"
-            >
-              <ExternalLink className="w-4 h-4" />
-              <span className="hidden sm:inline">View as Client</span>
-            </button>
-
-            <button
               onClick={onClose}
               className="w-9 h-9 rounded-full bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 flex items-center justify-center text-stone-500 dark:text-stone-400 font-bold text-base transition-colors"
             >
@@ -350,24 +338,36 @@ export const ClientDossierModal: React.FC<ClientDossierModalProps> = ({
           </div>
         </div>
 
-        {/* Tab Switcher: Diet Plan Protocol vs Timeslots */}
-        <div className="px-5 pt-3 bg-white dark:bg-[#1C231E] border-b border-stone-200 dark:border-stone-800 flex items-center justify-between gap-2">
+        {/* Tab Switcher: Setup Intake Profile vs Studio Diet vs Schedule */}
+        <div className="px-5 pt-3 bg-white dark:bg-[#1C231E] border-b border-stone-200 dark:border-stone-800 flex items-center justify-between gap-2 overflow-x-auto">
           <div className="flex gap-2">
             <button
+              onClick={() => setActiveMainTab('intake')}
+              className={`py-2.5 px-3.5 text-sm font-bold rounded-t-2xl transition-all flex items-center gap-2 border-b-2 whitespace-nowrap ${
+                activeMainTab === 'intake'
+                  ? 'border-emerald-800 text-emerald-900 dark:text-emerald-300 bg-[#FAF8F5] dark:bg-[#131814]'
+                  : 'border-transparent text-stone-500 hover:text-stone-800 dark:hover:text-stone-300'
+              }`}
+            >
+              <ClipboardList className="w-4 h-4" />
+              <span>Intake Profile</span>
+            </button>
+
+            <button
               onClick={() => setActiveMainTab('diet')}
-              className={`py-2.5 px-3.5 text-sm font-bold rounded-t-2xl transition-all flex items-center gap-2 border-b-2 ${
+              className={`py-2.5 px-3.5 text-sm font-bold rounded-t-2xl transition-all flex items-center gap-2 border-b-2 whitespace-nowrap ${
                 activeMainTab === 'diet'
                   ? 'border-emerald-800 text-emerald-900 dark:text-emerald-300 bg-[#FAF8F5] dark:bg-[#131814]'
                   : 'border-transparent text-stone-500 hover:text-stone-800 dark:hover:text-stone-300'
               }`}
             >
               <Apple className="w-4 h-4" />
-              <span>Studio Diet Designer</span>
+              <span>Studio Diet</span>
             </button>
 
             <button
               onClick={() => setActiveMainTab('attendance')}
-              className={`py-2.5 px-3.5 text-sm font-bold rounded-t-2xl transition-all flex items-center gap-2 border-b-2 ${
+              className={`py-2.5 px-3.5 text-sm font-bold rounded-t-2xl transition-all flex items-center gap-2 border-b-2 whitespace-nowrap ${
                 activeMainTab === 'attendance'
                   ? 'border-emerald-800 text-emerald-900 dark:text-emerald-300 bg-[#FAF8F5] dark:bg-[#131814]'
                   : 'border-transparent text-stone-500 hover:text-stone-800 dark:hover:text-stone-300'
@@ -426,7 +426,205 @@ export const ClientDossierModal: React.FC<ClientDossierModalProps> = ({
 
         {/* Modal Body */}
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
-          {activeMainTab === 'diet' ? (
+          {/* ═══════════════════════════════════════════════════════════════════
+              TAB 1: SETUP WIZARD INTAKE PROFILE
+              ═══════════════════════════════════════════════════════════════════ */}
+          {activeMainTab === 'intake' && (
+            <div className="space-y-4 animate-in fade-in text-sm">
+              {/* Top Intake Banner */}
+              <div className="bg-[#FAF6F0] dark:bg-[#1E2520] p-4 rounded-3xl border border-[#E6D7C3] dark:border-stone-800 flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <ClipboardList className="w-4 h-4 text-emerald-800 dark:text-emerald-400" />
+                    <span className="text-xs font-bold text-emerald-800 dark:text-emerald-400 uppercase tracking-wide">
+                      Setup Wizard Intake Record
+                    </span>
+                  </div>
+                  <h4 className="font-serif font-bold text-lg text-stone-900 dark:text-stone-100">
+                    {client.displayName}'s Onboarding Details
+                  </h4>
+                  <p className="text-xs text-stone-500 font-medium">
+                    Configured during initial profile creation and membership enrollment.
+                  </p>
+                </div>
+                <span
+                  className={`text-xs px-3 py-1 rounded-full font-bold border ${
+                    client.isExistingCustomer
+                      ? 'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950 dark:text-amber-200'
+                      : 'bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-200'
+                  }`}
+                >
+                  {client.isExistingCustomer ? 'Existing Studio Customer' : 'New Member'}
+                </span>
+              </div>
+
+              {/* 1. Physical Vitals & BMI */}
+              {(() => {
+                const hNum = parseFloat(client.height || '165') || 165;
+                const wNum = parseFloat(client.weight || '60') || 60;
+                const bmiVal = (wNum / ((hNum / 100) * (hNum / 100))).toFixed(1);
+                const bmiNum = parseFloat(bmiVal);
+                const bmiCategory =
+                  bmiNum < 18.5
+                    ? 'Underweight'
+                    : bmiNum < 25
+                    ? 'Normal Range'
+                    : bmiNum < 30
+                    ? 'Overweight'
+                    : 'Obese';
+
+                return (
+                  <div className="bg-white dark:bg-[#1C231E] rounded-3xl p-5 shadow-ambient border border-stone-200 dark:border-stone-800 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Scale className="w-4 h-4 text-emerald-800 dark:text-emerald-400" />
+                        <h4 className="font-serif font-bold text-stone-900 dark:text-stone-100">
+                          Physical Vitals &amp; Body Mass Index
+                        </h4>
+                      </div>
+                      <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                        BMI: {bmiVal} ({bmiCategory})
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+                      <div className="p-3 bg-[#FAF8F5] dark:bg-[#242D26] rounded-2xl border border-stone-200/80 dark:border-stone-800">
+                        <span className="text-[11px] text-stone-500 font-medium block">Height</span>
+                        <span className="font-bold text-base text-stone-900 dark:text-stone-100">
+                          {client.height || '165 cm'}
+                        </span>
+                      </div>
+                      <div className="p-3 bg-[#FAF8F5] dark:bg-[#242D26] rounded-2xl border border-stone-200/80 dark:border-stone-800">
+                        <span className="text-[11px] text-stone-500 font-medium block">Weight</span>
+                        <span className="font-bold text-base text-stone-900 dark:text-stone-100">
+                          {client.weight || '60 kg'}
+                        </span>
+                      </div>
+                      <div className="p-3 bg-[#FAF8F5] dark:bg-[#242D26] rounded-2xl border border-stone-200/80 dark:border-stone-800">
+                        <span className="text-[11px] text-stone-500 font-medium block">Age</span>
+                        <span className="font-bold text-base text-stone-900 dark:text-stone-100">
+                          {client.age || '28'} yrs
+                        </span>
+                      </div>
+                      <div className="p-3 bg-[#FAF8F5] dark:bg-[#242D26] rounded-2xl border border-stone-200/80 dark:border-stone-800">
+                        <span className="text-[11px] text-stone-500 font-medium block">Gender</span>
+                        <span className="font-bold text-base text-stone-900 dark:text-stone-100">
+                          {client.gender || 'Female'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* 2. Fitness Goals & Experience */}
+              <div className="bg-white dark:bg-[#1C231E] rounded-3xl p-5 shadow-ambient border border-stone-200 dark:border-stone-800 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Target className="w-4 h-4 text-emerald-800 dark:text-emerald-400" />
+                  <h4 className="font-serif font-bold text-stone-900 dark:text-stone-100">
+                    Fitness Goals &amp; Lifestyle
+                  </h4>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                  <div className="p-3 bg-[#FAF8F5] dark:bg-[#242D26] rounded-2xl border border-stone-200/80 dark:border-stone-800 space-y-1">
+                    <span className="text-[11px] text-stone-500 font-medium block">Primary Fitness Goal</span>
+                    <span className="font-bold text-stone-900 dark:text-stone-100 block">
+                      {client.fitnessGoal || 'Core Strength & Posture'}
+                    </span>
+                  </div>
+                  <div className="p-3 bg-[#FAF8F5] dark:bg-[#242D26] rounded-2xl border border-stone-200/80 dark:border-stone-800 space-y-1">
+                    <span className="text-[11px] text-stone-500 font-medium block">Reformer Experience</span>
+                    <span className="font-bold text-stone-900 dark:text-stone-100 block">
+                      {client.experienceLevel || 'Beginner (First Time on Reformer)'}
+                    </span>
+                  </div>
+                  <div className="p-3 bg-[#FAF8F5] dark:bg-[#242D26] rounded-2xl border border-stone-200/80 dark:border-stone-800 space-y-1">
+                    <span className="text-[11px] text-stone-500 font-medium block">Dietary Preference</span>
+                    <span className="font-bold text-stone-900 dark:text-stone-100 block">
+                      {client.dietaryPreference || 'Vegetarian'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 3. Package & Schedule Selection */}
+              <div className="bg-white dark:bg-[#1C231E] rounded-3xl p-5 shadow-ambient border border-stone-200 dark:border-stone-800 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-emerald-800 dark:text-emerald-400" />
+                    <h4 className="font-serif font-bold text-stone-900 dark:text-stone-100">
+                      Membership Package &amp; Schedule Preferences
+                    </h4>
+                  </div>
+                  <span className="text-xs font-bold text-emerald-900 dark:text-emerald-200 bg-emerald-100 dark:bg-emerald-950 px-2.5 py-0.5 rounded-full border border-emerald-300">
+                    {client.membershipTier || '1 Month Reformer'}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  <div className="p-3 bg-[#FAF8F5] dark:bg-[#242D26] rounded-2xl border border-stone-200/80 dark:border-stone-800 space-y-1">
+                    <span className="text-[11px] text-stone-500 font-medium block">Membership Term</span>
+                    <span className="font-bold text-stone-900 dark:text-stone-100 block">
+                      {client.startDate || 'Current Start'} to {client.endDate || 'Current End'}
+                    </span>
+                  </div>
+                  <div className="p-3 bg-[#FAF8F5] dark:bg-[#242D26] rounded-2xl border border-stone-200/80 dark:border-stone-800 space-y-1">
+                    <span className="text-[11px] text-stone-500 font-medium block">Preferred Daily Slot</span>
+                    <span className="font-bold text-emerald-800 dark:text-emerald-400 block">
+                      {client.preferredTimeSlot || '08:00 AM - 09:00 AM'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Selected Weekly Routine Days */}
+                <div className="p-3 bg-[#FAF8F5] dark:bg-[#242D26] rounded-2xl border border-stone-200/80 dark:border-stone-800 space-y-2">
+                  <span className="text-[11px] text-stone-500 font-medium block">
+                    Weekly Routine Recurring Days
+                  </span>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((dayName, idx) => {
+                      const isActive = client.selectedDays ? client.selectedDays.includes(idx) : idx >= 1 && idx <= 5;
+                      return (
+                        <span
+                          key={dayName}
+                          className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
+                            isActive
+                              ? 'bg-emerald-800 text-white shadow-xs'
+                              : 'bg-stone-200/60 dark:bg-stone-800 text-stone-400 dark:text-stone-500'
+                          }`}
+                        >
+                          {dayName}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* 4. Contact Information */}
+              <div className="bg-white dark:bg-[#1C231E] rounded-3xl p-5 shadow-ambient border border-stone-200 dark:border-stone-800 space-y-2">
+                <h4 className="font-serif font-bold text-stone-900 dark:text-stone-100">
+                  Contact &amp; Account
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <span className="text-stone-500">Email:</span>{' '}
+                    <strong className="text-stone-900 dark:text-stone-100">{client.email}</strong>
+                  </div>
+                  <div>
+                    <span className="text-stone-500">Phone:</span>{' '}
+                    <strong className="text-stone-900 dark:text-stone-100">{client.phone || 'Not provided'}</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ═══════════════════════════════════════════════════════════════════
+              TAB 2: STUDIO DIET DESIGNER
+              ═══════════════════════════════════════════════════════════════════ */}
+          {activeMainTab === 'diet' && (
             <div className="space-y-4 text-sm">
               {/* Diet Sub-Panels (Minimal content on screen at one time) */}
               <div className="grid grid-cols-4 gap-1.5 bg-stone-100 dark:bg-[#1C231E] p-1.5 rounded-2xl border border-stone-200 dark:border-stone-800">
@@ -1094,8 +1292,12 @@ export const ClientDossierModal: React.FC<ClientDossierModalProps> = ({
                 </button>
               </div>
             </div>
-          ) : (
-            /* Attendance & Timeslots Tab */
+          )}
+
+          {/* ═══════════════════════════════════════════════════════════════════
+              TAB 3: CLASSES & SCHEDULE
+              ═══════════════════════════════════════════════════════════════════ */}
+          {activeMainTab === 'attendance' && (
             <div className="space-y-4 text-sm">
               <div className="flex items-center justify-between bg-white dark:bg-[#1C231E] p-4 rounded-3xl border border-stone-200 dark:border-stone-800">
                 <div>

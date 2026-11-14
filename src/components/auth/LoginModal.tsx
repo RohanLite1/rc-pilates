@@ -72,7 +72,11 @@ export const LoginModal: React.FC = () => {
           !errMsg.toLowerCase().includes('cancel') &&
           nativeErr?.code !== '12501'
         ) {
-          setErrorMsg(errMsg || 'Google Sign-In failed. Please try again.');
+          if (errMsg.includes('10') || errMsg.includes('DEVELOPER_ERROR')) {
+            setErrorMsg('Google Play Services requires registering the Android app and SHA-1 in Firebase Console.');
+          } else {
+            setErrorMsg(errMsg || 'Google Sign-In failed. Please try again.');
+          }
         }
         setIsSigningIn(false);
         return;

@@ -31,7 +31,7 @@ const MainAppContent: React.FC = () => {
   } = useApp();
 
   const [dossierClient, setDossierClient] = useState<UserProfile | null>(null);
-  const [dossierInitialTab, setDossierInitialTab] = useState<'diet' | 'attendance'>('diet');
+  const [dossierInitialTab, setDossierInitialTab] = useState<'intake' | 'diet' | 'attendance'>('intake');
 
   // Prompt notification access ONLY when app starts
   useEffect(() => {
@@ -142,7 +142,7 @@ const MainAppContent: React.FC = () => {
     return <LoginModal />;
   }
 
-  const handleOpenDossier = (client: UserProfile, initialTab: 'diet' | 'attendance' = 'diet') => {
+  const handleOpenDossier = (client: UserProfile, initialTab: 'intake' | 'diet' | 'attendance' = 'intake') => {
     setDossierClient(client);
     setDossierInitialTab(initialTab);
   };

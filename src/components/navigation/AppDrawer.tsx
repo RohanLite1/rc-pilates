@@ -359,38 +359,50 @@ export const AppDrawer: React.FC = () => {
                 <ChevronRight className="w-4 h-4 opacity-50" />
               </button>
 
-              {/* 7. Reschedule Requests (If any) */}
-              {pendingRequestsCount > 0 && (
-                <button
-                  type="button"
-                  onClick={() => handleSelectInstructorView('requests')}
-                  className={`w-full flex items-center justify-between p-3 rounded-2xl font-bold text-left transition-all duration-150 active:scale-[0.98] ${
-                    !isAnimatingOut ? 'animate-drawer-item' : ''
-                  } ${
-                    activeTab === 'dashboard' && instructorActiveView === 'requests'
-                      ? 'bg-emerald-800 text-white shadow-xs'
-                      : 'text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800/60'
-                  }`}
-                  style={{ animationDelay: '270ms' }}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-xl bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 relative">
-                      <RefreshCw className="w-4 h-4" />
+              {/* 7. Reschedule Requests (Always accessible from burger menu) */}
+              <button
+                type="button"
+                onClick={() => handleSelectInstructorView('requests')}
+                className={`w-full flex items-center justify-between p-3 rounded-2xl font-bold text-left transition-all duration-150 active:scale-[0.98] ${
+                  !isAnimatingOut ? 'animate-drawer-item' : ''
+                } ${
+                  activeTab === 'dashboard' && instructorActiveView === 'requests'
+                    ? 'bg-emerald-800 text-white shadow-xs'
+                    : 'text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800/60'
+                }`}
+                style={{ animationDelay: '270ms' }}
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`p-2 rounded-xl relative ${
+                      activeTab === 'dashboard' && instructorActiveView === 'requests'
+                        ? 'bg-white/20 text-white'
+                        : pendingRequestsCount > 0
+                        ? 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300'
+                        : 'bg-emerald-100/70 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300'
+                    }`}
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    {pendingRequestsCount > 0 && (
                       <span className="w-2 h-2 rounded-full bg-amber-500 absolute -top-0.5 -right-0.5" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-1.5">
-                        <p className="font-bold text-sm">Reschedule Requests</p>
+                    )}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <p className="font-bold text-sm">Reschedule Requests</p>
+                      {pendingRequestsCount > 0 && (
                         <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-amber-500 text-white">
                           {pendingRequestsCount} new
                         </span>
-                      </div>
-                      <p className="text-[11px] opacity-80 font-normal">Approve requested shifts</p>
+                      )}
                     </div>
+                    <p className="text-[11px] opacity-80 font-normal">
+                      {pendingRequestsCount > 0 ? 'Review & accept shifts' : 'No pending shifts'}
+                    </p>
                   </div>
-                  <ChevronRight className="w-4 h-4 opacity-50" />
-                </button>
-              )}
+                </div>
+                <ChevronRight className="w-4 h-4 opacity-50" />
+              </button>
 
               {/* 8. Settings */}
               <button
