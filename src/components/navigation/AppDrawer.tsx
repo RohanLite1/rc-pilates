@@ -9,7 +9,6 @@ import {
   Settings,
   LogOut,
   X,
-  ExternalLink,
   Shield,
   Apple,
   ChevronRight,
@@ -30,7 +29,6 @@ export const AppDrawer: React.FC = () => {
     setActiveTab,
     sessions,
     clients,
-    switchUser,
     logout
   } = useApp();
 
@@ -542,23 +540,6 @@ export const AppDrawer: React.FC = () => {
           }`}
           style={{ animationDelay: isInstructor ? '330ms' : '180ms' }}
         >
-          {isInstructor && (
-            <button
-              type="button"
-              onClick={() => {
-                const sampleClient = clients[0];
-                if (sampleClient) {
-                  switchUser(sampleClient);
-                  setIsDrawerOpen(false);
-                }
-              }}
-              className="w-full py-2.5 px-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 text-emerald-900 dark:text-emerald-200 font-bold text-xs flex items-center justify-center gap-2 border border-emerald-200/70 dark:border-emerald-800/70 transition-all active:scale-[0.98]"
-            >
-              <ExternalLink className="w-3.5 h-3.5" />
-              <span>Preview as Client (Elena)</span>
-            </button>
-          )}
-
           <button
             type="button"
             onClick={() => {

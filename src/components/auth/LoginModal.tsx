@@ -7,13 +7,14 @@ import {
   Sliders,
   Apple
 } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
 import { StudioLogo } from '../common/StudioLogo';
 import { initGoogleAuth, triggerGoogleSignIn } from '../../services/googleAuthService';
 import { auth, googleProvider } from '../../services/firebaseConfig';
 import { signInWithPopup } from 'firebase/auth';
 
 export const LoginModal: React.FC = () => {
-  const { loginWithGoogle } = useApp();
+  const { loginWithGoogle, clients, instructorWhitelist } = useApp();
 
   const [showGoogleDialog, setShowGoogleDialog] = useState<boolean>(false);
   const [googleEmailInput, setGoogleEmailInput] = useState<string>('');
@@ -35,10 +36,18 @@ export const LoginModal: React.FC = () => {
 
   const handleGoogleClick = async () => {
     setErrorMsg('');
+
+    // If running in native Android APK, open Google Account Selector dialog directly
+    // to bypass the WebView sessionStorage/cross-origin popup restriction
+    if (Capacitor.isNativePlatform()) {
+      setShowGoogleDialog(true);
+      return;
+    }
+
     setIsSigningIn(true);
 
     try {
-      // 1. Try Firebase Google Auth popup (works seamlessly on modern web, Safari, Chrome)
+      // 1. Try Firebase Google Auth popup (works on modern web, Safari, Chrome)
       const res = await signInWithPopup(auth, googleProvider);
       if (res.user && res.user.email) {
         loginWithGoogle(
@@ -224,8 +233,8 @@ export const LoginModal: React.FC = () => {
               </button>
             </div>
 
-            <div className="space-y-2 mb-4">
-              {/* Whitelisted Instructor: rohan.sethi12126@gmail.com */}
+            <div className="space-y-2 mb-4 max-h-56 overflow-y-auto pr-1">
+              {/* Primary Studio Instructor: rohan.sethi12126@gmail.com */}
               <button
                 type="button"
                 onClick={() => handleGoogleSelect('rohan.sethi12126@gmail.com', 'Radhika Chopra')}
@@ -237,7 +246,7 @@ export const LoginModal: React.FC = () => {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
                     <p className="text-xs font-bold text-[#2D251E] truncate">
-                      Rohan Sethi (Radhika Chopra)
+                      Radhika Chopra
                     </p>
                     <span className="text-[9px] px-2 py-0.5 rounded-full bg-[#FAF6F0] text-[#675137] border border-[#D5C0A4] font-bold shrink-0">
                       Instructor
@@ -249,49 +258,65 @@ export const LoginModal: React.FC = () => {
                 </div>
               </button>
 
-              {/* Client Account: Elena Vance */}
-              <button
-                type="button"
-                onClick={() => handleGoogleSelect('elena.vance@gmail.com', 'Elena Vance')}
-                className="w-full flex items-center gap-3 p-2.5 rounded-2xl hover:bg-stone-50 dark:hover:bg-stone-800 border border-stone-200 dark:border-stone-700 transition-colors text-left"
-              >
-                <img
-                  src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=128&q=80"
-                  alt="Elena"
-                  className="w-9 h-9 rounded-full object-cover shrink-0"
-                />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5">
-                    <p className="text-xs font-semibold text-stone-900 dark:text-stone-100">Elena Vance</p>
-                    <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 font-medium">
-                      Client
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-stone-500 dark:text-stone-400 truncate">elena.vance@gmail.com</p>
-                </div>
-              </button>
+              {/* Other Whitelisted Instructors */}
+              {instructorWhitelist
+                .filter(e => e.toLowerCase() !== 'rohan.sethi12126@gmail.com' && e.toLowerCase() !== 'radhika.instructor@rcpilates.com')
+                .map(whitelistedEmail => (
+                  <button
+                    key={whitelistedEmail}
+                    type="button"
+                    onClick={() => handleGoogleSelect(whitelistedEmail)}
+                    className="w-full flex items-center gap-3 p-2.5 rounded-2xl bg-[#FAF6F0] hover:bg-[#F2E9DC] border border-[#EAE1D4] transition-colors text-left"
+                  >
+                    <div className="w-9 h-9 rounded-full bg-[#675137]/20 text-[#675137] flex items-center justify-center font-serif text-xs font-bold shrink-0">
+                      {whitelistedEmail.slice(0, 2).toUpperCase()}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-xs font-bold text-[#2D251E] truncate">
+                          {whitelistedEmail.split('@')[0]}
+                        </p>
+                        <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-white text-[#675137] border border-[#D5C0A4] font-semibold shrink-0">
+                          Instructor
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-[#786B5D] truncate">{whitelistedEmail}</p>
+                    </div>
+                  </button>
+                ))}
 
-              {/* Client Account: Marcus Reid */}
-              <button
-                type="button"
-                onClick={() => handleGoogleSelect('marcus.reid@gmail.com', 'Marcus Reid')}
-                className="w-full flex items-center gap-3 p-2.5 rounded-2xl hover:bg-stone-50 dark:hover:bg-stone-800 border border-stone-200 dark:border-stone-700 transition-colors text-left"
-              >
-                <img
-                  src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=128&q=80"
-                  alt="Marcus"
-                  className="w-9 h-9 rounded-full object-cover shrink-0"
-                />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5">
-                    <p className="text-xs font-semibold text-stone-900 dark:text-stone-100">Marcus Reid</p>
-                    <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 font-medium">
-                      Client
-                    </span>
+              {/* Active Registered Clients (no fake mock users) */}
+              {clients.map(cl => (
+                <button
+                  key={cl.id}
+                  type="button"
+                  onClick={() => handleGoogleSelect(cl.email, cl.displayName)}
+                  className="w-full flex items-center gap-3 p-2.5 rounded-2xl hover:bg-stone-50 border border-stone-200 transition-colors text-left"
+                >
+                  {cl.avatarUrl ? (
+                    <img
+                      src={cl.avatarUrl}
+                      alt={cl.displayName}
+                      className="w-9 h-9 rounded-full object-cover shrink-0 ring-1 ring-stone-200"
+                    />
+                  ) : (
+                    <div className="w-9 h-9 rounded-full bg-[#675137]/10 text-[#675137] flex items-center justify-center font-bold text-xs shrink-0">
+                      {cl.displayName ? cl.displayName.slice(0, 2).toUpperCase() : 'CL'}
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-xs font-semibold text-stone-900 truncate">
+                        {cl.displayName}
+                      </p>
+                      <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-stone-100 text-stone-600 font-medium">
+                        Client
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-stone-500 truncate">{cl.email}</p>
                   </div>
-                  <p className="text-[11px] text-stone-500 dark:text-stone-400 truncate">marcus.reid@gmail.com</p>
-                </div>
-              </button>
+                </button>
+              ))}
             </div>
 
             {/* Custom Gmail input */}

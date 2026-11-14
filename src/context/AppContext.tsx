@@ -451,15 +451,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [currentUser]);
 
-  // Keep currentUser in sync if client profile is edited
+  // Keep currentUser in sync if client profile is edited, or log out immediately if removed by instructor
   useEffect(() => {
     if (currentUser && currentUser.role === 'client') {
-      const updated = clients.find(c => c.id === currentUser.id);
-      if (updated && JSON.stringify(updated) !== JSON.stringify(currentUser)) {
-        setCurrentUser(updated);
+      const match = clients.find(
+        c => c.id === currentUser.id || (c.email && currentUser.email && c.email.toLowerCase() === currentUser.email.toLowerCase())
+      );
+      if (!match) {
+        console.warn('Client account was removed by instructor. Forcing immediate logout.');
+        try {
+          localStorage.removeItem(STORAGE_KEY_CURRENT_USER);
+        } catch (e) {
+          console.error(e);
+        }
+        setCurrentUser(null);
+      } else if (JSON.stringify(match) !== JSON.stringify(currentUser)) {
+        setCurrentUser(match);
       }
     }
-  }, [clients]);
+  }, [clients, currentUser]);
 
   // Real-time Firestore Synchronization across devices (iPhone, Android, Web)
   useEffect(() => {
@@ -477,11 +487,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             .forEach(c => deleteClientFromFirestore(c.id));
 
           setClients(cleanClients);
-          // Keep currentUser in sync if client
+          // Keep currentUser in sync if client or immediately log out if removed by instructor
           setCurrentUser(prevUser => {
             if (!prevUser || prevUser.role !== 'client') return prevUser;
-            const match = cleanClients.find(c => c.id === prevUser.id);
-            return match || prevUser;
+            const match = cleanClients.find(
+              c => c.id === prevUser.id || (c.email && prevUser.email && c.email.toLowerCase() === prevUser.email.toLowerCase())
+            );
+            if (!match) {
+              console.warn('Client account was removed by instructor in Firestore. Logging out.');
+              try {
+                localStorage.removeItem(STORAGE_KEY_CURRENT_USER);
+              } catch (e) {
+                console.error(e);
+              }
+              return null;
+            }
+            return match;
           });
           // Keep instructor's selected client in sync
           setSelectedClient(prevSel => {

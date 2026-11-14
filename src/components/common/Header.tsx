@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { LogOut, ChevronDown, Shield, User, Menu } from 'lucide-react';
+import { LogOut, ChevronDown, Shield, Menu } from 'lucide-react';
 import { StudioLogo } from './StudioLogo';
 
 export const Header: React.FC = () => {
-  const { currentUser, logout, switchUser, instructor, clients, toggleDrawer, isDrawerOpen } = useApp();
+  const { currentUser, logout, toggleDrawer, isDrawerOpen } = useApp();
   const [showSwitchMenu, setShowSwitchMenu] = useState<boolean>(false);
 
   if (!currentUser) return null;
@@ -87,56 +87,15 @@ export const Header: React.FC = () => {
                 <p className="text-[10px] text-stone-500 dark:text-stone-400 truncate">{currentUser.email}</p>
               </div>
 
-              <div className="py-1">
-                <div className="px-3 py-1 text-xs font-semibold text-stone-500 dark:text-stone-400">
-                  Switch Persona
-                </div>
-
-                <button
-                  onClick={() => {
-                    switchUser(instructor);
-                    setShowSwitchMenu(false);
-                  }}
-                  className={`w-full flex items-center gap-2 px-3 py-1.5 text-xs text-left transition-colors ${
-                    currentUser.role === 'instructor'
-                      ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-300 font-semibold'
-                      : 'text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800/50'
-                  }`}
-                >
-                  <Shield className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400" />
-                  <span className="flex-1">Radhika Chopra (Instructor)</span>
-                  {currentUser.role === 'instructor' && <span className="text-[10px] text-emerald-700 dark:text-emerald-400">Active</span>}
-                </button>
-
-                {clients.map(cl => (
-                  <button
-                    key={cl.id}
-                    onClick={() => {
-                      switchUser(cl);
-                      setShowSwitchMenu(false);
-                    }}
-                    className={`w-full flex items-center gap-2 px-3 py-1.5 text-xs text-left transition-colors ${
-                      currentUser.id === cl.id
-                        ? 'bg-stone-100 dark:bg-stone-800 text-stone-900 dark:text-stone-100 font-semibold'
-                        : 'text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800/50'
-                    }`}
-                  >
-                    <User className="w-3.5 h-3.5 text-stone-400" />
-                    <span className="flex-1 truncate">{cl.displayName} (Client)</span>
-                    {currentUser.id === cl.id && <span className="text-[10px] text-stone-500 dark:text-stone-400">Active</span>}
-                  </button>
-                ))}
-              </div>
-
               <div className="pt-1 mt-1 border-t border-stone-100 dark:border-stone-800">
                 <button
                   onClick={() => {
                     setShowSwitchMenu(false);
                     logout();
                   }}
-                  className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors font-medium"
+                  className="w-full flex items-center gap-2 px-3 py-2 text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors font-medium rounded-xl"
                 >
-                  <LogOut className="w-3.5 h-3.5" />
+                  <LogOut className="w-4 h-4" />
                   <span>Sign Out</span>
                 </button>
               </div>
