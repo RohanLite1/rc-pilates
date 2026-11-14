@@ -100,6 +100,7 @@ export interface ClientFeeRecord {
   dueDate: string; // e.g. "Dec 14, 2026"
   startDate?: string;
   endDate?: string;
+  selectedDays?: number[]; // [0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat]
   lastPaidDate?: string; // e.g. "Oct 10, 2026"
   lastReminderSent?: string; // e.g. "Today, 10:30 AM"
   notes?: string;
@@ -142,6 +143,7 @@ export interface UserProfile {
   startDate?: string;
   endDate?: string;
   preferredTimeSlot?: string;
+  selectedDays?: number[]; // e.g. [1, 2, 3, 4, 5] for Mon-Fri
   isExistingCustomer?: boolean;
   fitnessGoal?: string;
   experienceLevel?: string;

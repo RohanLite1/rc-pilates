@@ -50,7 +50,8 @@ export const SignUpWizardModal: React.FC<SignUpWizardModalProps> = ({ onCancel }
     startDate: initialStartDate,
     endDate: initialEndDate,
     preferredTimeSlot: '08:00 AM - 09:00 AM',
-    isExistingCustomer: false
+    isExistingCustomer: false,
+    selectedDays: [1, 2, 3, 4, 5]
   });
 
   // Live in-app Camera stream states
@@ -271,7 +272,8 @@ export const SignUpWizardModal: React.FC<SignUpWizardModalProps> = ({ onCancel }
       startDate: packageSelection.startDate,
       endDate: packageSelection.endDate,
       preferredTimeSlot: packageSelection.preferredTimeSlot,
-      isExistingCustomer: packageSelection.isExistingCustomer
+      isExistingCustomer: packageSelection.isExistingCustomer,
+      selectedDays: packageSelection.selectedDays
     });
   };
 

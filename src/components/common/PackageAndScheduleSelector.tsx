@@ -4,6 +4,7 @@ import {
   STUDIO_PACKAGES,
   calculateEndDateFromStart,
   formatDateReadable,
+  countSelectedDaysBetween,
   type StudioPackageId
 } from '../../data/packagePlans';
 import {
@@ -15,8 +16,11 @@ import {
   RotateCcw,
   Sun,
   Moon,
-  Info
+  Info,
+  CalendarCheck,
+  Bell
 } from 'lucide-react';
+import { DayOfWeekPicker } from './DayOfWeekPicker';
 
 export interface PackageSelectionState {
   packageChoice: StudioPackageId;
@@ -24,6 +28,7 @@ export interface PackageSelectionState {
   endDate: string;
   preferredTimeSlot: string;
   isExistingCustomer: boolean;
+  selectedDays?: number[]; // [0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat]
 }
 
 interface PackageAndScheduleSelectorProps {
@@ -40,6 +45,9 @@ export const PackageAndScheduleSelector: React.FC<PackageAndScheduleSelectorProp
   const { batchSlots, studioTimeslots } = useApp();
 
   const currentPkg = STUDIO_PACKAGES.find(p => p.id === value.packageChoice) || STUDIO_PACKAGES[0];
+  const activeSelectedDays = value.selectedDays && value.selectedDays.length > 0
+    ? value.selectedDays
+    : [1, 2, 3, 4, 5]; // Default Mon-Fri
 
   const handleSelectPackage = (pkgId: StudioPackageId) => {
     const pkg = STUDIO_PACKAGES.find(p => p.id === pkgId) || STUDIO_PACKAGES[0];
@@ -50,7 +58,8 @@ export const PackageAndScheduleSelector: React.FC<PackageAndScheduleSelectorProp
     onChange({
       ...value,
       packageChoice: pkgId,
-      endDate: newEndDate
+      endDate: newEndDate,
+      selectedDays: activeSelectedDays
     });
   };
 
@@ -62,14 +71,16 @@ export const PackageAndScheduleSelector: React.FC<PackageAndScheduleSelectorProp
     onChange({
       ...value,
       startDate: newStart,
-      endDate: newEndDate
+      endDate: newEndDate,
+      selectedDays: activeSelectedDays
     });
   };
 
   const handleEndDateChange = (newEnd: string) => {
     onChange({
       ...value,
-      endDate: newEnd
+      endDate: newEnd,
+      selectedDays: activeSelectedDays
     });
   };
 
@@ -81,19 +92,34 @@ export const PackageAndScheduleSelector: React.FC<PackageAndScheduleSelectorProp
     onChange({
       ...value,
       isExistingCustomer: isExisting,
-      endDate: newEndDate
+      endDate: newEndDate,
+      selectedDays: activeSelectedDays
+    });
+  };
+
+  const handleDaysChange = (days: number[]) => {
+    onChange({
+      ...value,
+      selectedDays: days
     });
   };
 
   const handleResetAutoDates = () => {
     onChange({
       ...value,
-      endDate: calculateEndDateFromStart(value.startDate, currentPkg.durationMonths)
+      endDate: calculateEndDateFromStart(value.startDate, currentPkg.durationMonths),
+      selectedDays: activeSelectedDays
     });
   };
 
   const morningBatches = batchSlots.filter(s => s.category === 'morning');
   const eveningBatches = batchSlots.filter(s => s.category === 'evening');
+
+  const estimatedSessionsCount = countSelectedDaysBetween(
+    value.startDate,
+    value.endDate,
+    activeSelectedDays
+  );
 
   return (
     <div className="space-y-4 text-[#2D251E] animate-in fade-in duration-200">
@@ -168,12 +194,35 @@ export const PackageAndScheduleSelector: React.FC<PackageAndScheduleSelectorProp
         </div>
       </div>
 
-      {/* 2. Starting Date and Ending Date Configuration */}
+      {/* 2. Alarm App Style Day-of-Week Picker (Repeat on Days) */}
+      <div className="bg-white rounded-2xl p-4 border border-stone-200 shadow-sm space-y-2.5">
+        <div className="flex items-center justify-between">
+          <label className="font-serif font-bold text-sm text-[#2D251E] flex items-center gap-1.5">
+            <Bell className="w-4 h-4 text-[#675137]" />
+            <span>2. Choose Class Days (Repeat on Days)</span>
+          </label>
+          <span className="text-[11px] font-sans font-semibold text-[#675137] bg-[#FAF6F0] px-2 py-0.5 rounded-full border border-[#D5C0A4]">
+            Alarm-Style Schedule
+          </span>
+        </div>
+        <p className="text-xs text-stone-500">
+          Tap the circular day buttons to choose which days of the week you will attend the studio.
+        </p>
+
+        <div className="pt-1">
+          <DayOfWeekPicker
+            selectedDays={activeSelectedDays}
+            onChange={handleDaysChange}
+          />
+        </div>
+      </div>
+
+      {/* 3. Starting Date and Ending Date Configuration */}
       <div className="bg-white rounded-2xl p-4 border border-stone-200 shadow-sm space-y-3">
         <div className="flex items-center justify-between">
           <label className="font-serif font-bold text-sm text-[#2D251E] flex items-center gap-1.5">
             <Calendar className="w-4 h-4 text-[#675137]" />
-            <span>2. Program Schedule &amp; Dates</span>
+            <span>3. Program Dates &amp; Duration</span>
           </label>
 
           {showExistingCustomerToggle && (
@@ -266,12 +315,12 @@ export const PackageAndScheduleSelector: React.FC<PackageAndScheduleSelectorProp
         </div>
       </div>
 
-      {/* 3. Dropdown Menu for Time Slots (Batches and Availability) */}
+      {/* 4. Dropdown Menu for Time Slots (Batches and Availability) */}
       <div className="bg-white rounded-2xl p-4 border border-stone-200 shadow-sm space-y-2">
         <label className="block font-serif font-bold text-sm text-[#2D251E] flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <Clock className="w-4 h-4 text-[#675137]" />
-            <span>3. Preferred Training Timeslot</span>
+            <span>4. Preferred Training Timeslot</span>
           </div>
           <span className="text-[11px] font-sans font-semibold text-[#675137]">
             Daily Studio Batch
@@ -284,7 +333,7 @@ export const PackageAndScheduleSelector: React.FC<PackageAndScheduleSelectorProp
         <div className="relative mt-2">
           <select
             value={value.preferredTimeSlot}
-            onChange={e => onChange({ ...value, preferredTimeSlot: e.target.value })}
+            onChange={e => onChange({ ...value, preferredTimeSlot: e.target.value, selectedDays: activeSelectedDays })}
             className="w-full px-3.5 py-3 bg-[#FAF8F5] border border-stone-200 rounded-2xl text-xs font-semibold text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#675137]/30 transition-all shadow-xs"
           >
             {/* Morning Batches */}
@@ -322,21 +371,35 @@ export const PackageAndScheduleSelector: React.FC<PackageAndScheduleSelectorProp
           </select>
         </div>
 
-        {/* Selected Slot Feedback Pill */}
-        <div className="mt-2.5 p-2.5 rounded-xl bg-[#FAF6F0] border border-[#E3D7C7] flex items-center justify-between text-xs">
-          <div className="flex items-center gap-2">
-            {value.preferredTimeSlot.toLowerCase().includes('pm') ? (
-              <Moon className="w-3.5 h-3.5 text-[#675137]" />
-            ) : (
-              <Sun className="w-3.5 h-3.5 text-[#675137]" />
-            )}
-            <span className="font-semibold text-stone-800">
-              Reserved Batch: {value.preferredTimeSlot}
+        {/* Live Booking Feedback Card */}
+        <div className="mt-3 p-3 rounded-2xl bg-[#FAF6F0] border border-[#E3D7C7] space-y-2">
+          <div className="flex items-center justify-between text-xs">
+            <div className="flex items-center gap-2">
+              {value.preferredTimeSlot.toLowerCase().includes('pm') ? (
+                <Moon className="w-4 h-4 text-[#675137]" />
+              ) : (
+                <Sun className="w-4 h-4 text-[#675137]" />
+              )}
+              <span className="font-bold text-[#2D251E]">
+                Reserved Batch: {value.preferredTimeSlot}
+              </span>
+            </div>
+            <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
+              Confirmed Slot
             </span>
           </div>
-          <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
-            Confirmed Slot
-          </span>
+
+          <div className="pt-2 border-t border-[#D5C0A4]/60 flex flex-wrap items-center justify-between gap-2 text-[11px] text-stone-600">
+            <span className="flex items-center gap-1 font-medium">
+              <CalendarCheck className="w-3.5 h-3.5 text-[#675137]" />
+              <span>
+                {activeSelectedDays.length} Days/Week ({formatDateReadable(value.startDate)} → {formatDateReadable(value.endDate)})
+              </span>
+            </span>
+            <span className="font-bold text-[#675137] bg-white/80 px-2 py-0.5 rounded-lg border border-[#D5C0A4]">
+              ~{estimatedSessionsCount} Classes Scheduled
+            </span>
+          </div>
         </div>
       </div>
     </div>

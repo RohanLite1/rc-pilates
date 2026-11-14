@@ -48,7 +48,8 @@ export const ClientOnboardingModal: React.FC = () => {
     startDate: initialStartDate,
     endDate: initialEndDate,
     preferredTimeSlot: currentUser?.preferredTimeSlot || '08:00 AM - 09:00 AM',
-    isExistingCustomer: currentUser?.isExistingCustomer || false
+    isExistingCustomer: currentUser?.isExistingCustomer || false,
+    selectedDays: currentUser?.selectedDays || [1, 2, 3, 4, 5]
   });
 
   const [isCameraActive, setIsCameraActive] = useState<boolean>(false);
@@ -197,7 +198,8 @@ export const ClientOnboardingModal: React.FC = () => {
       startDate: packageSelection.startDate,
       endDate: packageSelection.endDate,
       preferredTimeSlot: packageSelection.preferredTimeSlot,
-      isExistingCustomer: packageSelection.isExistingCustomer
+      isExistingCustomer: packageSelection.isExistingCustomer,
+      selectedDays: packageSelection.selectedDays
     });
   };
 

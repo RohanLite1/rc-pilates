@@ -105,6 +105,7 @@ interface AppContextType {
     startDate?: string;
     endDate?: string;
     preferredTimeSlot?: string;
+    selectedDays?: number[];
     isExistingCustomer?: boolean;
   }) => void;
   updateClientMembership: (
@@ -114,6 +115,7 @@ interface AppContextType {
       startDate?: string;
       endDate?: string;
       preferredTimeSlot?: string;
+      selectedDays?: number[];
     }
   ) => void;
   logout: () => void;
@@ -530,6 +532,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     startDate?: string;
     endDate?: string;
     preferredTimeSlot?: string;
+    selectedDays?: number[];
     isExistingCustomer?: boolean;
   }) => {
     if (!currentUser) return;
@@ -542,6 +545,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const resolvedStartDate = data.startDate || currentUser.startDate || getTodayDateString();
     const resolvedEndDate = data.endDate || calculateEndDateFromStart(resolvedStartDate, selectedPkg.durationMonths);
     const resolvedTimeSlot = data.preferredTimeSlot || currentUser.preferredTimeSlot || '08:00 AM - 09:00 AM';
+    const resolvedSelectedDays = data.selectedDays && data.selectedDays.length > 0
+      ? data.selectedDays
+      : currentUser.selectedDays || [1, 2, 3, 4, 5];
 
     const updatedUser: UserProfile = {
       ...currentUser,
@@ -559,6 +565,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       startDate: resolvedStartDate,
       endDate: resolvedEndDate,
       preferredTimeSlot: resolvedTimeSlot,
+      selectedDays: resolvedSelectedDays,
       isExistingCustomer: data.isExistingCustomer || false,
       isOnboarded: true,
       feeRecord: {
@@ -569,6 +576,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         dueDate: resolvedEndDate,
         startDate: resolvedStartDate,
         endDate: resolvedEndDate,
+        selectedDays: resolvedSelectedDays,
         lastPaidDate: currentUser.feeRecord?.lastPaidDate
       },
       dietPlan: currentUser.dietPlan ? {
@@ -581,20 +589,60 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       } : undefined
     };
 
-    // Update their welcome/initial session date and time to match their chosen starting date and timeslot
-    setSessions(prev =>
-      prev.map(s => {
-        if (s.clientId === currentUser.id) {
-          return {
-            ...s,
+    // Schedule recurring classes for client based on selected alarm-style days
+    const [sy, sm, sd] = resolvedStartDate.split('-').map(Number);
+    const startDay = new Date(sy, sm - 1, sd);
+    const [ey, em, ed] = resolvedEndDate.split('-').map(Number);
+    const endDay = new Date(ey, em - 1, ed);
+    const diffDays = Math.round((endDay.getTime() - startDay.getTime()) / (1000 * 60 * 60 * 24));
+
+    const newClientSessions: SessionTimeslot[] = [];
+    const recurringGroupId = `recgroup-onboarding-${currentUser.id}-${Date.now()}`;
+
+    for (let i = 0; i <= diffDays; i++) {
+      const cur = new Date(startDay);
+      cur.setDate(startDay.getDate() + i);
+      if (resolvedSelectedDays.includes(cur.getDay())) {
+        const y = cur.getFullYear();
+        const m = String(cur.getMonth() + 1).padStart(2, '0');
+        const d = String(cur.getDate()).padStart(2, '0');
+        const sessionDate = `${y}-${m}-${d}`;
+
+        newClientSessions.push({
+          id: `slot-${Date.now()}-${newClientSessions.length}`,
+          sessionTitle: `Reformer Class (${selectedPkg.shortTitle})`,
+          date: sessionDate,
+          time: resolvedTimeSlot,
+          instructorName: INITIAL_INSTRUCTOR.displayName,
+          instructorId: INITIAL_INSTRUCTOR.id,
+          clientId: currentUser.id,
+          clientName: updatedUser.displayName,
+          status: 'scheduled',
+          notes: `Scheduled via Onboarding (${resolvedSelectedDays.length} days/week)`,
+          isRecurring: true,
+          recurringPattern: `${resolvedSelectedDays.length} days/week`,
+          recurringGroupId
+        });
+      }
+    }
+
+    setSessions(prev => [
+      ...prev.filter(s => s.clientId !== currentUser.id),
+      ...(newClientSessions.length > 0
+        ? newClientSessions
+        : [{
+            id: `slot-${Date.now()}-0`,
+            sessionTitle: `Reformer Induction & Assessment (${selectedPkg.shortTitle})`,
             date: resolvedStartDate,
             time: resolvedTimeSlot,
-            sessionTitle: `Reformer Induction & Assessment (${selectedPkg.shortTitle})`
-          };
-        }
-        return s;
-      })
-    );
+            instructorName: INITIAL_INSTRUCTOR.displayName,
+            instructorId: INITIAL_INSTRUCTOR.id,
+            clientId: currentUser.id,
+            clientName: updatedUser.displayName,
+            status: 'scheduled' as AttendanceStatus,
+            notes: 'Initial Assessment'
+          }])
+    ]);
 
     setCurrentUser(updatedUser);
     setClients(prev => prev.map(c => (c.id === updatedUser.id ? updatedUser : c)));
@@ -669,6 +717,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const resolvedStart = extraData?.startDate || getTodayDateString();
     const resolvedEnd = extraData?.endDate || calculateEndDateFromStart(resolvedStart, selectedPkg.durationMonths);
     const resolvedTime = extraData?.preferredTimeSlot || '08:00 AM - 09:00 AM';
+    const resolvedSelectedDays = extraData?.selectedDays && extraData.selectedDays.length > 0
+      ? extraData.selectedDays
+      : [1, 2, 3, 4, 5];
 
     const newUser: UserProfile = {
       id: `${role}-${Date.now()}`,
@@ -685,6 +736,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       startDate: resolvedStart,
       endDate: resolvedEnd,
       preferredTimeSlot: resolvedTime,
+      selectedDays: resolvedSelectedDays,
       isExistingCustomer: extraData?.isExistingCustomer || false,
       bio: role === 'instructor' ? 'RC Pilates & Fitness Studio instructor.' : 'Passionate RC Pilates studio member.',
       height: extraData?.height || '165 cm',
@@ -703,7 +755,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         packageTitle: selectedPkg.title,
         dueDate: resolvedEnd,
         startDate: resolvedStart,
-        endDate: resolvedEnd
+        endDate: resolvedEnd,
+        selectedDays: resolvedSelectedDays
       } : undefined,
       dietPlan: {
         ...DEFAULT_STUDIO_DIET_PLAN,
@@ -719,19 +772,59 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     if (role === 'client') {
-      const firstSession: SessionTimeslot = {
-        id: `slot-${Date.now()}`,
-        sessionTitle: `Reformer Induction & Assessment (${selectedPkg.shortTitle})`,
-        date: resolvedStart,
-        time: resolvedTime,
-        instructorName: 'Radhika Chopra',
-        instructorId: 'instructor-1',
-        clientId: newUser.id,
-        clientName: name,
-        status: 'scheduled',
-        notes: `Initial induction and assessment for ${selectedPkg.title}.`
-      };
-      setSessions(prev => [firstSession, ...prev]);
+      const [sy, sm, sd] = resolvedStart.split('-').map(Number);
+      const startDay = new Date(sy, sm - 1, sd);
+      const [ey, em, ed] = resolvedEnd.split('-').map(Number);
+      const endDay = new Date(ey, em - 1, ed);
+      const diffDays = Math.round((endDay.getTime() - startDay.getTime()) / (1000 * 60 * 60 * 24));
+
+      const newClientSessions: SessionTimeslot[] = [];
+      const recurringGroupId = `recgroup-reg-${newUser.id}-${Date.now()}`;
+
+      for (let i = 0; i <= diffDays; i++) {
+        const cur = new Date(startDay);
+        cur.setDate(startDay.getDate() + i);
+        if (resolvedSelectedDays.includes(cur.getDay())) {
+          const y = cur.getFullYear();
+          const m = String(cur.getMonth() + 1).padStart(2, '0');
+          const d = String(cur.getDate()).padStart(2, '0');
+          const sessionDate = `${y}-${m}-${d}`;
+
+          newClientSessions.push({
+            id: `slot-${Date.now()}-${newClientSessions.length}`,
+            sessionTitle: `Reformer Class (${selectedPkg.shortTitle})`,
+            date: sessionDate,
+            time: resolvedTime,
+            instructorName: 'Radhika Chopra',
+            instructorId: 'instructor-1',
+            clientId: newUser.id,
+            clientName: name,
+            status: 'scheduled',
+            notes: `Booked via Setup Wizard (${resolvedSelectedDays.length} days/week)`,
+            isRecurring: true,
+            recurringPattern: `${resolvedSelectedDays.length} days/week`,
+            recurringGroupId
+          });
+        }
+      }
+
+      setSessions(prev => [
+        ...(newClientSessions.length > 0
+          ? newClientSessions
+          : [{
+              id: `slot-${Date.now()}`,
+              sessionTitle: `Reformer Induction & Assessment (${selectedPkg.shortTitle})`,
+              date: resolvedStart,
+              time: resolvedTime,
+              instructorName: 'Radhika Chopra',
+              instructorId: 'instructor-1',
+              clientId: newUser.id,
+              clientName: name,
+              status: 'scheduled' as AttendanceStatus,
+              notes: `Initial induction and assessment for ${selectedPkg.title}.`
+            }]),
+        ...prev
+      ]);
       setClients(prev => [newUser, ...prev]);
     }
 
@@ -749,6 +842,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       startDate?: string;
       endDate?: string;
       preferredTimeSlot?: string;
+      selectedDays?: number[];
     }
   ) => {
     setClients(prev =>
@@ -761,6 +855,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           const resolvedStart = data.startDate || c.startDate || getTodayDateString();
           const resolvedEnd = data.endDate || c.endDate || calculateEndDateFromStart(resolvedStart, selectedPkg.durationMonths);
           const resolvedTime = data.preferredTimeSlot || c.preferredTimeSlot || '08:00 AM - 09:00 AM';
+          const resolvedDays = data.selectedDays && data.selectedDays.length > 0
+            ? data.selectedDays
+            : (c.selectedDays || [1, 2, 3, 4, 5]);
 
           const updated: UserProfile = {
             ...c,
@@ -768,6 +865,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             startDate: resolvedStart,
             endDate: resolvedEnd,
             preferredTimeSlot: resolvedTime,
+            selectedDays: resolvedDays,
             isExistingCustomer: true,
             feeRecord: c.feeRecord
               ? {
@@ -776,10 +874,53 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                   packageTitle: selectedPkg.title,
                   dueDate: resolvedEnd,
                   startDate: resolvedStart,
-                  endDate: resolvedEnd
+                  endDate: resolvedEnd,
+                  selectedDays: resolvedDays
                 }
               : undefined
           };
+
+          // Regenerate client sessions according to updated schedule
+          const [sy, sm, sd] = resolvedStart.split('-').map(Number);
+          const startDay = new Date(sy, sm - 1, sd);
+          const [ey, em, ed] = resolvedEnd.split('-').map(Number);
+          const endDay = new Date(ey, em - 1, ed);
+          const diffDays = Math.round((endDay.getTime() - startDay.getTime()) / (1000 * 60 * 60 * 24));
+
+          const newClientSessions: SessionTimeslot[] = [];
+          const recurringGroupId = `recgroup-updated-${c.id}-${Date.now()}`;
+
+          for (let i = 0; i <= diffDays; i++) {
+            const cur = new Date(startDay);
+            cur.setDate(startDay.getDate() + i);
+            if (resolvedDays.includes(cur.getDay())) {
+              const y = cur.getFullYear();
+              const m = String(cur.getMonth() + 1).padStart(2, '0');
+              const d = String(cur.getDate()).padStart(2, '0');
+              const sessionDate = `${y}-${m}-${d}`;
+
+              newClientSessions.push({
+                id: `slot-${Date.now()}-${newClientSessions.length}`,
+                sessionTitle: `Reformer Class (${selectedPkg.shortTitle})`,
+                date: sessionDate,
+                time: resolvedTime,
+                instructorName: 'Radhika Chopra',
+                instructorId: 'instructor-1',
+                clientId: c.id,
+                clientName: c.displayName,
+                status: 'scheduled',
+                notes: `Updated Schedule (${resolvedDays.length} days/week)`,
+                isRecurring: true,
+                recurringPattern: `${resolvedDays.length} days/week`,
+                recurringGroupId
+              });
+            }
+          }
+
+          setSessions(prevSessions => [
+            ...prevSessions.filter(s => s.clientId !== c.id),
+            ...newClientSessions
+          ]);
 
           if (currentUser?.id === clientId) {
             setCurrentUser(updated);

@@ -17,6 +17,7 @@ import {
   Palette,
   CheckCircle2,
   Clock,
+  Bell,
   X
 } from 'lucide-react';
 import { BotanicalBranchDrawing } from './StudioDrawings';
@@ -54,7 +55,8 @@ export const ProfileView: React.FC = () => {
       currentUser?.feeRecord?.endDate ||
       calculateEndDateFromStart(currentUser?.startDate || getTodayDateString(), 1),
     preferredTimeSlot: currentUser?.preferredTimeSlot || '08:00 AM - 09:00 AM',
-    isExistingCustomer: true
+    isExistingCustomer: true,
+    selectedDays: currentUser?.selectedDays || [1, 2, 3, 4, 5]
   });
 
   const [updateToast, setUpdateToast] = useState<string>('');
@@ -331,6 +333,20 @@ export const ProfileView: React.FC = () => {
                 <span className="font-bold text-[#2D251E] flex items-center gap-1">
                   <Clock className="w-3.5 h-3.5 text-[#675137]" />
                   <span>{currentUser.preferredTimeSlot}</span>
+                </span>
+              </div>
+            )}
+
+            {currentUser.selectedDays && currentUser.selectedDays.length > 0 && (
+              <div className="flex items-center justify-between p-2.5 rounded-2xl bg-[#FAF8F5] border border-stone-100">
+                <span className="text-stone-600">Weekly Class Days</span>
+                <span className="font-bold text-[#2D251E] flex items-center gap-1">
+                  <Bell className="w-3.5 h-3.5 text-[#675137]" />
+                  <span>
+                    {currentUser.selectedDays.length === 5 && [1, 2, 3, 4, 5].every(d => currentUser.selectedDays?.includes(d))
+                      ? 'Mon – Fri (5 days/week)'
+                      : `${currentUser.selectedDays.length} days/week`}
+                  </span>
                 </span>
               </div>
             )}

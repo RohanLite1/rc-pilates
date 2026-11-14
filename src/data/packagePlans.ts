@@ -78,3 +78,31 @@ export function formatDateReadable(dateStr?: string): string {
     return dateStr;
   }
 }
+
+export function countSelectedDaysBetween(
+  startDateStr: string,
+  endDateStr: string,
+  selectedDays: number[]
+): number {
+  if (!startDateStr || !endDateStr || !selectedDays || selectedDays.length === 0) return 0;
+  try {
+    const [sy, sm, sd] = startDateStr.split('-').map(Number);
+    const start = new Date(sy, sm - 1, sd);
+    const [ey, em, ed] = endDateStr.split('-').map(Number);
+    const end = new Date(ey, em - 1, ed);
+    if (isNaN(start.getTime()) || isNaN(end.getTime()) || end < start) return 0;
+
+    const diffDays = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+    let count = 0;
+    for (let i = 0; i <= diffDays; i++) {
+      const cur = new Date(start);
+      cur.setDate(start.getDate() + i);
+      if (selectedDays.includes(cur.getDay())) {
+        count++;
+      }
+    }
+    return count;
+  } catch (e) {
+    return 0;
+  }
+}
