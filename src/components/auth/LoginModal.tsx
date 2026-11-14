@@ -1,29 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import {
-  Lock,
   Mail,
-  ArrowRight,
   Shield,
   AlertCircle,
   Sliders,
-  Apple,
-  UserPlus
+  Apple
 } from 'lucide-react';
-import { SignUpWizardModal } from './SignUpWizardModal';
 import { StudioLogo } from '../common/StudioLogo';
 import { initGoogleAuth, triggerGoogleSignIn } from '../../services/googleAuthService';
 
 export const LoginModal: React.FC = () => {
-  const { loginWithGoogle, loginWithCredentials } = useApp();
+  const { loginWithGoogle } = useApp();
 
-  const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
   const [showGoogleDialog, setShowGoogleDialog] = useState<boolean>(false);
   const [googleEmailInput, setGoogleEmailInput] = useState<string>('');
-
-  // Form states
-  const [usernameOrEmail, setUsernameOrEmail] = useState<string>('radhika_instructor');
-  const [password, setPassword] = useState<string>('password123');
   const [errorMsg, setErrorMsg] = useState<string>('');
 
   // Initialize official Google Identity Services
@@ -39,17 +30,8 @@ export const LoginModal: React.FC = () => {
     );
   }, []);
 
-  const handleCredentialsSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMsg('');
-
-    const res = loginWithCredentials(usernameOrEmail, password);
-    if (!res.success) {
-      setErrorMsg(res.error || 'Login failed. Please check credentials.');
-    }
-  };
-
   const handleGoogleClick = () => {
+    setErrorMsg('');
     const triggered = triggerGoogleSignIn();
     if (!triggered) {
       setShowGoogleDialog(true);
@@ -60,11 +42,6 @@ export const LoginModal: React.FC = () => {
     loginWithGoogle(email, name);
     setShowGoogleDialog(false);
   };
-
-  // If user chooses Sign Up, launch the 3-step setup wizard
-  if (authMode === 'signup') {
-    return <SignUpWizardModal onCancel={() => setAuthMode('signin')} />;
-  }
 
   return (
     <div className="w-full min-h-screen flex flex-col justify-between p-4 sm:p-6 md:p-8 bg-[#F9F6F0] text-[#2D251E] select-none transition-colors duration-200">
@@ -120,35 +97,15 @@ export const LoginModal: React.FC = () => {
           </div>
         </div>
 
-        {/* Auth Box */}
-        <div className="bg-white/95 backdrop-blur-md rounded-3xl p-5 sm:p-6 shadow-ambient-lg border border-stone-200/90 w-full space-y-4 transition-colors">
-          {/* Sign In vs Sign Up Tabs */}
-          <div className="flex bg-[#F2E9DC] p-1.5 rounded-2xl border border-stone-200/80">
-            <button
-              type="button"
-              onClick={() => {
-                setAuthMode('signin');
-                setErrorMsg('');
-              }}
-              className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${
-                authMode === 'signin'
-                  ? 'bg-white text-stone-900 shadow-xs'
-                  : 'text-stone-600 hover:text-stone-900'
-              }`}
-            >
-              Sign In
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setAuthMode('signup');
-                setErrorMsg('');
-              }}
-              className="flex-1 py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1 text-emerald-900 hover:text-emerald-950 font-semibold"
-            >
-              <UserPlus className="w-3.5 h-3.5 text-emerald-700" />
-              <span>Sign Up (Wizard)</span>
-            </button>
+        {/* Auth Box - 100% Google Authentication Only */}
+        <div className="bg-white/95 backdrop-blur-md rounded-3xl p-6 sm:p-7 shadow-ambient-lg border border-stone-200/90 w-full space-y-4 transition-colors">
+          <div className="text-center space-y-1">
+            <h3 className="font-serif font-bold text-lg text-stone-900">
+              Studio Sign In
+            </h3>
+            <p className="text-xs text-stone-500 font-medium">
+              Access your reformer schedule, attendance &amp; custom nutrition
+            </p>
           </div>
 
           {errorMsg && (
@@ -158,15 +115,15 @@ export const LoginModal: React.FC = () => {
             </div>
           )}
 
-          {/* Option 1: Gmail / Google Login Button */}
-          <div>
+          {/* The Single Sign-In Method: Google Sign-In */}
+          <div className="pt-2">
             <button
               type="button"
               onClick={handleGoogleClick}
-              className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-2xl bg-white hover:bg-stone-50 border border-stone-200 shadow-xs text-sm font-bold text-stone-800 transition-all active:scale-[0.99]"
+              className="w-full flex items-center justify-center gap-3 py-3.5 px-4 rounded-2xl bg-white hover:bg-stone-50 border-2 border-stone-200 hover:border-[#675137]/30 shadow-md text-sm font-bold text-stone-800 transition-all active:scale-[0.99] group"
             >
               {/* Google G Icon */}
-              <svg className="w-4 h-4" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
                 <path
                   fill="#4285F4"
                   d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.65v3.05h3.9c2.28-2.1 3.645-5.18 3.645-9.14z"
@@ -188,72 +145,12 @@ export const LoginModal: React.FC = () => {
             </button>
           </div>
 
-          <div className="flex items-center gap-3 my-2">
-            <div className="flex-1 h-px bg-stone-200" />
-            <span className="text-xs font-semibold text-stone-500">
-              Or with studio username &amp; password
-            </span>
-            <div className="flex-1 h-px bg-stone-200" />
-          </div>
-
-          {/* Option 2: Username & Password Form */}
-          <form onSubmit={handleCredentialsSubmit} className="space-y-3">
-            <div>
-              <label className="block text-xs font-bold text-stone-700 mb-1">
-                Username or Email
-              </label>
-              <div className="relative">
-                <Mail className="w-4 h-4 absolute left-3 top-3.5 text-stone-400" />
-                <input
-                  type="text"
-                  value={usernameOrEmail}
-                  onChange={e => setUsernameOrEmail(e.target.value)}
-                  placeholder="e.g. radhika_instructor or elena_client"
-                  className="w-full pl-9 pr-3 py-2.5 text-xs bg-[#FAF8F5] border border-stone-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700 text-stone-900"
-                />
-              </div>
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="block text-[11px] font-semibold text-stone-600">
-                  Password
-                </label>
-              </div>
-              <div className="relative">
-                <Lock className="w-4 h-4 absolute left-3 top-3 text-stone-400" />
-                <input
-                  type="password"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full pl-9 pr-3 py-2 text-xs bg-[#FAF8F5] border border-stone-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700 text-stone-900"
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              className="w-full py-3 px-4 rounded-2xl bg-[#675137] hover:bg-[#52402B] text-white font-semibold text-xs shadow-md transition-all active:scale-[0.99] flex items-center justify-center gap-2 mt-2"
-            >
-              <span>Sign In to RC Pilates</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </form>
-
-          {/* New User Callout */}
-          <div className="p-3 rounded-2xl bg-[#F6F1EA] border border-[#E3D7C7] flex items-center justify-between">
-            <div>
-              <p className="text-xs font-bold text-[#4A3B2C]">New to RC Pilates?</p>
-              <p className="text-[11px] text-[#786B5D]">Set up profile, height, weight &amp; goals</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setAuthMode('signup')}
-              className="px-3.5 py-1.5 rounded-xl bg-[#675137] hover:bg-[#52402B] text-white text-xs font-bold shadow-xs transition-transform active:scale-95"
-            >
-              Start Sign Up &rarr;
-            </button>
+          <div className="pt-2 text-center">
+            <p className="text-[11px] text-stone-500 leading-relaxed">
+              Instant sign-in for studio members &amp; instructors.
+              <br />
+              New members configure their package &amp; schedule upon first login.
+            </p>
           </div>
         </div>
       </div>
@@ -263,7 +160,7 @@ export const LoginModal: React.FC = () => {
         RC Pilates &amp; Fitness Studio • Mindful Movement &amp; Nutrition
       </footer>
 
-      {/* Simulated Google Sign-In Account Chooser Modal */}
+      {/* Google Sign-In Account Chooser Modal (Direct or Fallback) */}
       {showGoogleDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in">
           <div className="bg-white dark:bg-[#1C231E] rounded-3xl p-5 w-full max-w-sm shadow-2xl border border-stone-200 dark:border-stone-800 animate-in zoom-in-95 text-stone-900 dark:text-stone-100">
@@ -287,36 +184,15 @@ export const LoginModal: React.FC = () => {
                     d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.36 0 3.26 2.64 1.24 6.58l4.04 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
                   />
                 </svg>
-                <h3 className="font-semibold text-sm">Sign in with Google</h3>
+                <h4 className="font-serif font-bold text-sm">Choose Google Account</h4>
               </div>
               <button
-                onClick={() => setShowGoogleDialog(false)}
-                className="text-stone-400 hover:text-stone-700 text-sm font-semibold p-1"
-              >
-                ✕
-              </button>
-            </div>
-
-            <p className="text-xs text-stone-600 dark:text-stone-300 mb-3">
-              Choose your Gmail account to access RC Pilates Studio:
-            </p>
-
-            {/* Launch Official Google Chooser */}
-            <div className="mb-3">
-              <button
                 type="button"
-                onClick={() => triggerGoogleSignIn()}
-                className="w-full flex items-center justify-center gap-2.5 py-3 px-4 rounded-2xl bg-[#675137] hover:bg-[#52402B] text-white font-bold text-xs shadow-md transition-all active:scale-[0.99]"
+                onClick={() => setShowGoogleDialog(false)}
+                className="w-7 h-7 rounded-full bg-stone-100 dark:bg-stone-800 text-stone-500 hover:text-stone-700 flex items-center justify-center text-xs font-bold"
               >
-                <span>Open Google Sign-In Window</span>
-                <ArrowRight className="w-3.5 h-3.5" />
+                &times;
               </button>
-            </div>
-
-            <div className="flex items-center gap-2 my-2">
-              <div className="flex-1 h-px bg-stone-200" />
-              <span className="text-[10px] uppercase font-bold text-stone-400">Or Quick Select Account</span>
-              <div className="flex-1 h-px bg-stone-200" />
             </div>
 
             <div className="space-y-2 mb-4">
