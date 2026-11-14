@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import {
   User,
@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { SignUpWizardModal } from './SignUpWizardModal';
 import { StudioLogo } from '../common/StudioLogo';
+import { initGoogleAuth, triggerGoogleSignIn } from '../../services/googleAuthService';
 
 export const LoginModal: React.FC = () => {
   const { loginWithGoogle, loginWithCredentials } = useApp();
@@ -26,6 +27,19 @@ export const LoginModal: React.FC = () => {
   const [password, setPassword] = useState<string>('password123');
   const [errorMsg, setErrorMsg] = useState<string>('');
 
+  // Initialize official Google Identity Services
+  useEffect(() => {
+    initGoogleAuth(
+      googleUser => {
+        loginWithGoogle(googleUser.email, googleUser.name, googleUser.picture);
+        setShowGoogleDialog(false);
+      },
+      err => {
+        console.warn('Google Auth Error:', err);
+      }
+    );
+  }, []);
+
   const handleCredentialsSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
@@ -33,6 +47,13 @@ export const LoginModal: React.FC = () => {
     const res = loginWithCredentials(usernameOrEmail, password);
     if (!res.success) {
       setErrorMsg(res.error || 'Login failed. Please check credentials.');
+    }
+  };
+
+  const handleGoogleClick = () => {
+    const triggered = triggerGoogleSignIn();
+    if (!triggered) {
+      setShowGoogleDialog(true);
     }
   };
 
@@ -142,7 +163,7 @@ export const LoginModal: React.FC = () => {
           <div>
             <button
               type="button"
-              onClick={() => setShowGoogleDialog(true)}
+              onClick={handleGoogleClick}
               className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-2xl bg-white hover:bg-stone-50 border border-stone-200 shadow-xs text-sm font-bold text-stone-800 transition-all active:scale-[0.99]"
             >
               {/* Google G Icon */}
@@ -308,6 +329,24 @@ export const LoginModal: React.FC = () => {
             <p className="text-xs text-stone-600 dark:text-stone-300 mb-3">
               Choose your Gmail account to access RC Pilates Studio:
             </p>
+
+            {/* Launch Official Google Chooser */}
+            <div className="mb-3">
+              <button
+                type="button"
+                onClick={() => triggerGoogleSignIn()}
+                className="w-full flex items-center justify-center gap-2.5 py-3 px-4 rounded-2xl bg-[#675137] hover:bg-[#52402B] text-white font-bold text-xs shadow-md transition-all active:scale-[0.99]"
+              >
+                <span>Open Google Sign-In Window</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2 my-2">
+              <div className="flex-1 h-px bg-stone-200" />
+              <span className="text-[10px] uppercase font-bold text-stone-400">Or Quick Select Account</span>
+              <div className="flex-1 h-px bg-stone-200" />
+            </div>
 
             <div className="space-y-2 mb-4">
               {/* Whitelisted Instructor: rohan.sethi12126@gmail.com */}

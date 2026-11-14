@@ -69,7 +69,7 @@ interface AppContextType {
   setTheme: (theme: AppTheme) => void;
 
   // Auth
-  loginWithGoogle: (email: string, name?: string) => void;
+  loginWithGoogle: (email: string, name?: string, avatarUrl?: string) => void;
   loginWithCredentials: (usernameOrEmail: string, password: string) => { success: boolean; error?: string };
   registerUser: (
     name: string,
@@ -320,8 +320,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [clients]);
 
-  // Google Sign-In with Instructor Whitelisting
-  const loginWithGoogle = (email: string, name?: string) => {
+  // Google Sign-In with Instructor Whitelisting & Profile Photo
+  const loginWithGoogle = (email: string, name?: string, avatarUrl?: string) => {
     const cleanEmail = email.toLowerCase().trim();
 
     // Whitelist check: rohan.sethi12126@gmail.com is granted Master Instructor access
@@ -333,7 +333,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (isWhitelistedInstructor) {
       const instructorUser: UserProfile = {
         ...INITIAL_INSTRUCTOR,
-        email: cleanEmail
+        email: cleanEmail,
+        avatarUrl: avatarUrl || INITIAL_INSTRUCTOR.avatarUrl
       };
       setCurrentUser(instructorUser);
       setActiveTab('dashboard');
@@ -343,7 +344,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // Check existing clients
     const existingClient = clients.find(c => c.email.toLowerCase() === cleanEmail);
     if (existingClient) {
-      setCurrentUser(existingClient);
+      const updatedClient =
+        avatarUrl && !existingClient.avatarUrl?.startsWith('data:')
+          ? { ...existingClient, avatarUrl }
+          : existingClient;
+      setCurrentUser(updatedClient);
       setActiveTab('dashboard');
       return;
     }
@@ -356,7 +361,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       username: cleanEmail.split('@')[0],
       displayName: clientDisplayName,
       role: 'client',
-      avatarUrl: `https://api.dicebear.com/7.x/notionists/svg?seed=${cleanEmail}&backgroundColor=eaf0e9`,
+      avatarUrl: avatarUrl || `https://api.dicebear.com/7.x/notionists/svg?seed=${cleanEmail}&backgroundColor=eaf0e9`,
       membershipTier: 'Mindful Core 8-Pack (Welcome Tier)',
       joinedDate: 'Nov 2026',
       bio: 'New member connected via Google Account at RC Pilates & Fitness Studio.',
