@@ -16,7 +16,6 @@ import {
   Bell
 } from 'lucide-react';
 import { PilatesPoseDrawing } from '../common/StudioDrawings';
-import { NotificationDemoCard } from '../common/NotificationDemoCard';
 
 export const ClientDashboard: React.FC = () => {
   const { currentUser, sessions, setActiveTab, requestReschedule, studioTimeslots } = useApp();
@@ -156,8 +155,6 @@ export const ClientDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Native Phone Notifications & Test Card */}
-      <NotificationDemoCard />
 
       {/* Screen Segment Toggle (Minimal on screen at one time) */}
       <div className="grid grid-cols-2 gap-2 bg-stone-100 dark:bg-[#1C231E] p-1.5 rounded-2xl border border-stone-200 dark:border-stone-800">

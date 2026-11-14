@@ -23,7 +23,6 @@ import {
   MorningSunDrawing,
   PeacefulMoonDrawing
 } from '../common/StudioDrawings';
-import { NotificationDemoCard } from '../common/NotificationDemoCard';
 import { DayOfWeekPicker } from '../common/DayOfWeekPicker';
 import { StudioTimeslotSelect } from '../common/StudioTimeslotSelect';
 import { InstructorBatchesView } from './InstructorBatchesView';
@@ -729,8 +728,6 @@ export const InstructorDashboard: React.FC<InstructorDashboardProps> = ({ onOpen
             </button>
           </div>
 
-          {/* Phone Notification Showcase & Demo Card */}
-          <NotificationDemoCard />
         </div>
       )}
 

@@ -204,7 +204,7 @@ export const ProfileView: React.FC = () => {
         </div>
       )}
 
-      {/* Native Notifications & Alarms Demo */}
+      {/* Studio Notifications & Reminders */}
       <NotificationDemoCard />
 
       {/* Member Physical Profile & Wellness Metrics */}

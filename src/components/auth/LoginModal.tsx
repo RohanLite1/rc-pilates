@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import {
-  User,
   Lock,
   Mail,
   ArrowRight,
@@ -220,7 +219,6 @@ export const LoginModal: React.FC = () => {
                 <label className="block text-[11px] font-semibold text-stone-600">
                   Password
                 </label>
-                <span className="text-[10px] text-stone-400">Demo password: password123</span>
               </div>
               <div className="relative">
                 <Lock className="w-4 h-4 absolute left-3 top-3 text-stone-400" />
@@ -256,33 +254,6 @@ export const LoginModal: React.FC = () => {
             >
               Start Sign Up &rarr;
             </button>
-          </div>
-
-          {/* Quick Demo Switcher Pills */}
-          <div className="pt-3 border-t border-stone-100 text-center">
-            <p className="text-xs text-stone-500 mb-2 font-semibold">1-Tap Quick Demo:</p>
-            <div className="flex items-center justify-center gap-2 flex-wrap">
-              <button
-                type="button"
-                onClick={() => {
-                  loginWithGoogle('rohan.sethi12126@gmail.com', 'Radhika Chopra');
-                }}
-                className="text-xs font-bold text-[#675137] bg-[#F2E9DC] hover:bg-[#EAE0D2] px-3.5 py-1.5 rounded-full border border-[#D5C0A4] flex items-center gap-1.5 transition-all shadow-xs"
-              >
-                <Shield className="w-3.5 h-3.5 text-[#675137]" />
-                <span>Instructor (Radhika Chopra)</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  loginWithGoogle('elena.vance@gmail.com', 'Elena Vance');
-                }}
-                className="text-xs font-bold text-stone-700 bg-stone-100 hover:bg-stone-200 px-3.5 py-1.5 rounded-full border border-stone-200 flex items-center gap-1.5 transition-all shadow-xs"
-              >
-                <User className="w-3.5 h-3.5 text-stone-600" />
-                <span>Client (Elena Vance)</span>
-              </button>
-            </div>
           </div>
         </div>
       </div>
@@ -418,20 +389,11 @@ export const LoginModal: React.FC = () => {
               </button>
             </div>
 
-            {/* Custom Gmail input & New Client Demo Button */}
+            {/* Custom Gmail input */}
             <div className="pt-3 border-t border-stone-100 dark:border-stone-800 space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="block text-[11px] font-medium text-stone-600 dark:text-stone-400">
-                  Or sign in with any custom Gmail:
-                </label>
-                <button
-                  type="button"
-                  onClick={() => setGoogleEmailInput('priya.sharma@gmail.com')}
-                  className="text-[10px] text-[#675137] font-bold hover:underline"
-                >
-                  Try New Client
-                </button>
-              </div>
+              <label className="block text-[11px] font-medium text-stone-600 dark:text-stone-400">
+                Or enter your Gmail address:
+              </label>
 
               <div className="flex gap-2">
                 <div className="relative flex-1">
