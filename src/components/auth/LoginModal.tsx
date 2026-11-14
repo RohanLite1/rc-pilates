@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import {
-  Mail,
   Shield,
   AlertCircle,
   Sliders,
@@ -9,24 +8,37 @@ import {
 } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import { StudioLogo } from '../common/StudioLogo';
-import { initGoogleAuth, triggerGoogleSignIn } from '../../services/googleAuthService';
-import { auth, googleProvider } from '../../services/firebaseConfig';
-import { signInWithPopup } from 'firebase/auth';
+import { initGoogleAuth, triggerGoogleSignIn, GOOGLE_CLIENT_ID } from '../../services/googleAuthService';
+import { auth as camAuth, AuthProvider } from 'capacitor-auth-manager';
+
+// Initialize capacitor-auth-manager once with studio Google OAuth Client ID
+try {
+  camAuth.configure({
+    providers: {
+      [AuthProvider.GOOGLE]: {
+        clientId: GOOGLE_CLIENT_ID,
+        serverClientId: GOOGLE_CLIENT_ID,
+        webFlow: 'popup',
+        androidFlow: 'auto'
+      }
+    },
+    persistence: 'local'
+  });
+} catch (e) {
+  console.warn('camAuth configure notice:', e);
+}
 
 export const LoginModal: React.FC = () => {
-  const { loginWithGoogle, clients, instructorWhitelist } = useApp();
+  const { loginWithGoogle } = useApp();
 
-  const [showGoogleDialog, setShowGoogleDialog] = useState<boolean>(false);
-  const [googleEmailInput, setGoogleEmailInput] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState<string>('');
   const [isSigningIn, setIsSigningIn] = useState<boolean>(false);
 
-  // Initialize official Google Identity Services
+  // Initialize official Google Identity Services (GIS) on web
   useEffect(() => {
     initGoogleAuth(
       googleUser => {
         loginWithGoogle(googleUser.email, googleUser.name, googleUser.picture);
-        setShowGoogleDialog(false);
       },
       err => {
         console.warn('Google Auth Error:', err);
@@ -37,47 +49,63 @@ export const LoginModal: React.FC = () => {
   const handleGoogleClick = async () => {
     setErrorMsg('');
 
-    // If running in native Android APK, open Google Account Selector dialog directly
-    // to bypass the WebView sessionStorage/cross-origin popup restriction
+    // A. Native Android APK: Native Google Play Services Account Chooser Bottom-Sheet
     if (Capacitor.isNativePlatform()) {
-      setShowGoogleDialog(true);
+      setIsSigningIn(true);
+      try {
+        const result = await camAuth.signIn(AuthProvider.GOOGLE);
+        if (result?.user?.email) {
+          loginWithGoogle(
+            result.user.email,
+            result.user.displayName || undefined,
+            result.user.photoURL || undefined
+          );
+          setIsSigningIn(false);
+          return;
+        }
+      } catch (nativeErr: any) {
+        console.warn('Native Google sign-in note:', nativeErr);
+        const errMsg = nativeErr?.message || '';
+        // If user cancelled, don't show an error
+        if (
+          nativeErr?.code !== 'CANCELED' &&
+          !errMsg.toLowerCase().includes('cancel') &&
+          nativeErr?.code !== '12501'
+        ) {
+          setErrorMsg(errMsg || 'Google Sign-In failed. Please try again.');
+        }
+        setIsSigningIn(false);
+        return;
+      }
+      setIsSigningIn(false);
       return;
     }
 
-    setIsSigningIn(true);
-
+    // B. Web Platform (Vercel, Safari, Chrome):
+    // Synchronously open Google Identity Services OAuth popup in the click gesture
     try {
-      // 1. Try Firebase Google Auth popup (works on modern web, Safari, Chrome)
-      const res = await signInWithPopup(auth, googleProvider);
-      if (res.user && res.user.email) {
-        loginWithGoogle(
-          res.user.email,
-          res.user.displayName || undefined,
-          res.user.photoURL || undefined
-        );
-        setShowGoogleDialog(false);
+      const triggered = triggerGoogleSignIn();
+      if (!triggered) {
+        // If GIS token client wasn't initialized yet, try camAuth popup
+        setIsSigningIn(true);
+        const result = await camAuth.signIn(AuthProvider.GOOGLE);
+        if (result?.user?.email) {
+          loginWithGoogle(
+            result.user.email,
+            result.user.displayName || undefined,
+            result.user.photoURL || undefined
+          );
+        }
         setIsSigningIn(false);
-        return;
       }
-    } catch (fbErr: any) {
-      console.warn('Firebase Google Auth error/fallback:', fbErr?.code || fbErr);
-      if (fbErr?.code === 'auth/popup-closed-by-user') {
-        setIsSigningIn(false);
-        return;
+    } catch (webErr: any) {
+      console.warn('Web Google sign-in note:', webErr);
+      const errMsg = webErr?.message || '';
+      if (!errMsg.toLowerCase().includes('cancel') && !errMsg.toLowerCase().includes('closed')) {
+        setErrorMsg('Google Sign-In was unable to complete. Please try again.');
       }
+      setIsSigningIn(false);
     }
-
-    // 2. Fallback to Google Identity Services / Account Picker Dialog
-    const triggered = triggerGoogleSignIn();
-    if (!triggered) {
-      setShowGoogleDialog(true);
-    }
-    setIsSigningIn(false);
-  };
-
-  const handleGoogleSelect = (email: string, name?: string) => {
-    loginWithGoogle(email, name);
-    setShowGoogleDialog(false);
   };
 
   return (
@@ -134,7 +162,7 @@ export const LoginModal: React.FC = () => {
           </div>
         </div>
 
-        {/* Auth Box - 100% Google Authentication Only */}
+        {/* Auth Box - Official Google Authentication */}
         <div className="bg-white/95 backdrop-blur-md rounded-3xl p-6 sm:p-7 shadow-ambient-lg border border-stone-200/90 w-full space-y-4 transition-colors">
           <div className="text-center space-y-1">
             <h3 className="font-serif font-bold text-lg text-stone-900">
@@ -152,7 +180,7 @@ export const LoginModal: React.FC = () => {
             </div>
           )}
 
-          {/* The Single Sign-In Method: Google Sign-In */}
+          {/* The Single Sign-In Action: Official Google Sign-In */}
           <div className="pt-2">
             <button
               type="button"
@@ -160,7 +188,7 @@ export const LoginModal: React.FC = () => {
               disabled={isSigningIn}
               className="w-full flex items-center justify-center gap-3 py-3.5 px-4 rounded-2xl bg-white hover:bg-stone-50 border-2 border-stone-200 hover:border-[#675137]/30 shadow-md text-sm font-bold text-stone-800 transition-all active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed group"
             >
-              {/* Google G Icon */}
+              {/* Google G Logo */}
               <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
                 <path
                   fill="#4285F4"
@@ -197,164 +225,6 @@ export const LoginModal: React.FC = () => {
       <footer className="w-full max-w-md mx-auto text-center py-2 text-xs text-stone-500 font-medium">
         RC Pilates &amp; Fitness Studio • Mindful Movement &amp; Nutrition
       </footer>
-
-      {/* Google Sign-In Account Chooser Modal (Direct or Fallback) */}
-      {showGoogleDialog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white dark:bg-[#1C231E] rounded-3xl p-5 w-full max-w-sm shadow-2xl border border-stone-200 dark:border-stone-800 animate-in zoom-in-95 text-stone-900 dark:text-stone-100">
-            <div className="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-stone-800 mb-3">
-              <div className="flex items-center gap-2">
-                <svg className="w-5 h-5" viewBox="0 0 24 24">
-                  <path
-                    fill="#4285F4"
-                    d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.65v3.05h3.9c2.28-2.1 3.645-5.18 3.645-9.14z"
-                  />
-                  <path
-                    fill="#34A853"
-                    d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.24v3.15C3.26 21.36 7.36 24 12 24z"
-                  />
-                  <path
-                    fill="#FBBC05"
-                    d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.24C.45 8.16 0 9.97 0 12c0 2.03.45 3.84 1.24 5.42l4.04-3.15z"
-                  />
-                  <path
-                    fill="#EA4335"
-                    d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.36 0 3.26 2.64 1.24 6.58l4.04 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
-                  />
-                </svg>
-                <h4 className="font-serif font-bold text-sm">Choose Google Account</h4>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowGoogleDialog(false)}
-                className="w-7 h-7 rounded-full bg-stone-100 dark:bg-stone-800 text-stone-500 hover:text-stone-700 flex items-center justify-center text-xs font-bold"
-              >
-                &times;
-              </button>
-            </div>
-
-            <div className="space-y-2 mb-4 max-h-56 overflow-y-auto pr-1">
-              {/* Primary Studio Instructor: rohan.sethi12126@gmail.com */}
-              <button
-                type="button"
-                onClick={() => handleGoogleSelect('rohan.sethi12126@gmail.com', 'Radhika Chopra')}
-                className="w-full flex items-center gap-3 p-3 rounded-2xl bg-[#F2E9DC] hover:bg-[#EAE0D2] border border-[#D5C0A4] transition-colors text-left"
-              >
-                <div className="w-10 h-10 rounded-full bg-[#675137] text-white flex items-center justify-center font-serif text-xs font-bold ring-2 ring-[#D5C0A4] shrink-0">
-                  RC
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5">
-                    <p className="text-xs font-bold text-[#2D251E] truncate">
-                      Radhika Chopra
-                    </p>
-                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-[#FAF6F0] text-[#675137] border border-[#D5C0A4] font-bold shrink-0">
-                      Instructor
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-[#786B5D] truncate">
-                    rohan.sethi12126@gmail.com
-                  </p>
-                </div>
-              </button>
-
-              {/* Other Whitelisted Instructors */}
-              {instructorWhitelist
-                .filter(e => e.toLowerCase() !== 'rohan.sethi12126@gmail.com' && e.toLowerCase() !== 'radhika.instructor@rcpilates.com')
-                .map(whitelistedEmail => (
-                  <button
-                    key={whitelistedEmail}
-                    type="button"
-                    onClick={() => handleGoogleSelect(whitelistedEmail)}
-                    className="w-full flex items-center gap-3 p-2.5 rounded-2xl bg-[#FAF6F0] hover:bg-[#F2E9DC] border border-[#EAE1D4] transition-colors text-left"
-                  >
-                    <div className="w-9 h-9 rounded-full bg-[#675137]/20 text-[#675137] flex items-center justify-center font-serif text-xs font-bold shrink-0">
-                      {whitelistedEmail.slice(0, 2).toUpperCase()}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5">
-                        <p className="text-xs font-bold text-[#2D251E] truncate">
-                          {whitelistedEmail.split('@')[0]}
-                        </p>
-                        <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-white text-[#675137] border border-[#D5C0A4] font-semibold shrink-0">
-                          Instructor
-                        </span>
-                      </div>
-                      <p className="text-[10px] text-[#786B5D] truncate">{whitelistedEmail}</p>
-                    </div>
-                  </button>
-                ))}
-
-              {/* Active Registered Clients (no fake mock users) */}
-              {clients.map(cl => (
-                <button
-                  key={cl.id}
-                  type="button"
-                  onClick={() => handleGoogleSelect(cl.email, cl.displayName)}
-                  className="w-full flex items-center gap-3 p-2.5 rounded-2xl hover:bg-stone-50 border border-stone-200 transition-colors text-left"
-                >
-                  {cl.avatarUrl ? (
-                    <img
-                      src={cl.avatarUrl}
-                      alt={cl.displayName}
-                      className="w-9 h-9 rounded-full object-cover shrink-0 ring-1 ring-stone-200"
-                    />
-                  ) : (
-                    <div className="w-9 h-9 rounded-full bg-[#675137]/10 text-[#675137] flex items-center justify-center font-bold text-xs shrink-0">
-                      {cl.displayName ? cl.displayName.slice(0, 2).toUpperCase() : 'CL'}
-                    </div>
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
-                      <p className="text-xs font-semibold text-stone-900 truncate">
-                        {cl.displayName}
-                      </p>
-                      <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-stone-100 text-stone-600 font-medium">
-                        Client
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-stone-500 truncate">{cl.email}</p>
-                  </div>
-                </button>
-              ))}
-            </div>
-
-            {/* Custom Gmail input */}
-            <div className="pt-3 border-t border-stone-100 dark:border-stone-800 space-y-2">
-              <label className="block text-[11px] font-medium text-stone-600 dark:text-stone-400">
-                Or enter your Gmail address:
-              </label>
-
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <Mail className="w-3.5 h-3.5 absolute left-3 top-2.5 text-stone-400" />
-                  <input
-                    type="email"
-                    value={googleEmailInput}
-                    onChange={e => setGoogleEmailInput(e.target.value)}
-                    placeholder="e.g. user@gmail.com"
-                    className="w-full pl-8 pr-2 py-2 text-xs bg-stone-50 border border-stone-200 rounded-xl focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#675137] text-stone-900"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (googleEmailInput.trim()) {
-                      handleGoogleSelect(googleEmailInput.trim());
-                    }
-                  }}
-                  className="px-3.5 py-2 rounded-xl bg-[#675137] hover:bg-[#52402B] text-white text-xs font-bold shadow-xs transition-colors"
-                >
-                  Continue
-                </button>
-              </div>
-              <p className="text-[10px] text-stone-400 font-medium">
-                Tip: Whitelisted Gmail <strong className="text-[#675137]">rohan.sethi12126@gmail.com</strong> logs in as Instructor. Any other Gmail logs in as a Client.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

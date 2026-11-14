@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import type {
   UserProfile,
   SessionTimeslot,
@@ -405,7 +405,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [isDeviceFrame, setIsDeviceFrame] = useState<boolean>(false);
-  const [selectedClient, setSelectedClient] = useState<UserProfile | null>(INITIAL_CLIENTS[0]);
+  const [selectedClient, setSelectedClient] = useState<UserProfile | null>(INITIAL_CLIENTS[0] || null);
+
+  // Firestore sync state refs
+  const hasLoadedInitialFirestoreClients = useRef<boolean>(false);
+  const knownActiveClientIds = useRef<Set<string>>(new Set());
 
   // Persist clients
   useEffect(() => {
@@ -451,26 +455,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [currentUser]);
 
-  // Keep currentUser in sync if client profile is edited, or log out immediately if removed by instructor
-  useEffect(() => {
-    if (currentUser && currentUser.role === 'client') {
-      const match = clients.find(
-        c => c.id === currentUser.id || (c.email && currentUser.email && c.email.toLowerCase() === currentUser.email.toLowerCase())
-      );
-      if (!match) {
-        console.warn('Client account was removed by instructor. Forcing immediate logout.');
-        try {
-          localStorage.removeItem(STORAGE_KEY_CURRENT_USER);
-        } catch (e) {
-          console.error(e);
-        }
-        setCurrentUser(null);
-      } else if (JSON.stringify(match) !== JSON.stringify(currentUser)) {
-        setCurrentUser(match);
-      }
-    }
-  }, [clients, currentUser]);
-
   // Real-time Firestore Synchronization across devices (iPhone, Android, Web)
   useEffect(() => {
     // 1. Subscribe to live Firestore client profiles
@@ -487,23 +471,57 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             .forEach(c => deleteClientFromFirestore(c.id));
 
           setClients(cleanClients);
-          // Keep currentUser in sync if client or immediately log out if removed by instructor
-          setCurrentUser(prevUser => {
-            if (!prevUser || prevUser.role !== 'client') return prevUser;
-            const match = cleanClients.find(
-              c => c.id === prevUser.id || (c.email && prevUser.email && c.email.toLowerCase() === prevUser.email.toLowerCase())
-            );
-            if (!match) {
-              console.warn('Client account was removed by instructor in Firestore. Logging out.');
-              try {
-                localStorage.removeItem(STORAGE_KEY_CURRENT_USER);
-              } catch (e) {
-                console.error(e);
+
+          if (!hasLoadedInitialFirestoreClients.current) {
+            hasLoadedInitialFirestoreClients.current = true;
+            cleanClients.forEach(c => knownActiveClientIds.current.add(c.id));
+            // Keep currentUser in sync if client profile was edited
+            setCurrentUser(prevUser => {
+              if (!prevUser || prevUser.role !== 'client') return prevUser;
+              const match = cleanClients.find(
+                c => c.id === prevUser.id || (c.email && prevUser.email && c.email.toLowerCase() === prevUser.email.toLowerCase())
+              );
+              if (match) {
+                knownActiveClientIds.current.add(match.id);
+                return match;
               }
-              return null;
-            }
-            return match;
-          });
+              return prevUser;
+            });
+          } else {
+            // Subsequent live updates from Firestore:
+            // Auto-logout ONLY if an established client was removed by the instructor
+            setCurrentUser(prevUser => {
+              if (!prevUser || prevUser.role !== 'client') return prevUser;
+
+              const wasKnownActive = knownActiveClientIds.current.has(prevUser.id);
+              const isStillInFirestore = cleanClients.some(
+                c => c.id === prevUser.id || (c.email && prevUser.email && c.email.toLowerCase() === prevUser.email.toLowerCase())
+              );
+
+              if (wasKnownActive && !isStillInFirestore) {
+                console.warn('Client account was removed by instructor in Firestore. Auto logging out.');
+                try {
+                  localStorage.removeItem(STORAGE_KEY_CURRENT_USER);
+                } catch (e) {
+                  console.error(e);
+                }
+                return null;
+              }
+
+              const match = cleanClients.find(
+                c => c.id === prevUser.id || (c.email && prevUser.email && c.email.toLowerCase() === prevUser.email.toLowerCase())
+              );
+              if (match) {
+                knownActiveClientIds.current.add(match.id);
+                return match;
+              }
+              return prevUser;
+            });
+
+            // Refresh active client IDs
+            cleanClients.forEach(c => knownActiveClientIds.current.add(c.id));
+          }
+
           // Keep instructor's selected client in sync
           setSelectedClient(prevSel => {
             if (!prevSel) return cleanClients[0] || null;
@@ -669,10 +687,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       notes: 'Initial reformer postural alignment & core induction session.'
     };
 
+    knownActiveClientIds.current.add(newClient.id);
     setSessions(prev => [welcomeSession, ...prev]);
     setClients(prev => [newClient, ...prev]);
     setCurrentUser(newClient);
     setActiveTab('dashboard');
+    saveClientToFirestore(newClient);
+    saveSessionToFirestore(welcomeSession);
   };
 
   // Complete Onboarding for New Client

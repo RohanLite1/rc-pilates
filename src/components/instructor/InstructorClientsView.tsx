@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import type { UserProfile } from '../../types';
-import { Search, ChevronRight, Plus, ExternalLink, Apple, CreditCard, Send, Check, FileText, Trash2, AlertTriangle, ShieldAlert } from 'lucide-react';
+import { Search, ChevronRight, Plus, Apple, CreditCard, Send, Check, FileText, Trash2, AlertTriangle, ShieldAlert } from 'lucide-react';
 import { InstructorAlignmentDrawing, BotanicalBranchDrawing } from '../common/StudioDrawings';
 import { StudioLogo } from '../common/StudioLogo';
 
@@ -10,7 +10,7 @@ interface InstructorClientsViewProps {
 }
 
 export const InstructorClientsView: React.FC<InstructorClientsViewProps> = ({ onOpenDossier }) => {
-  const { clients, switchUser, registerUser, updateClientFeeStatus, sendFeeReminder, deleteClient } = useApp();
+  const { clients, registerUser, updateClientFeeStatus, sendFeeReminder, deleteClient } = useApp();
   const [search, setSearch] = useState<string>('');
   const [showAddClient, setShowAddClient] = useState<boolean>(false);
   const [clientToDelete, setClientToDelete] = useState<UserProfile | null>(null);
@@ -201,18 +201,8 @@ export const InstructorClientsView: React.FC<InstructorClientsViewProps> = ({ on
               </div>
             </div>
 
-            {/* Action Buttons: 4 clean actions */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 border-t border-stone-100 dark:border-stone-800 text-xs">
-              <button
-                type="button"
-                onClick={() => switchUser(c)}
-                className="py-2.5 px-2 rounded-xl bg-stone-50 dark:bg-[#242D26] hover:bg-stone-100 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-200 border border-stone-200 dark:border-stone-700 font-bold flex items-center justify-center gap-1.5 transition-colors"
-                title="Switch and view app as this client"
-              >
-                <ExternalLink className="w-3.5 h-3.5 text-stone-400" />
-                <span>View</span>
-              </button>
-
+            {/* Action Buttons: 3 clean actions (Diet, Schedule, Delete) */}
+            <div className="grid grid-cols-3 gap-2 pt-1 border-t border-stone-100 dark:border-stone-800 text-xs">
               <button
                 type="button"
                 onClick={() => onOpenDossier(c, 'diet')}
